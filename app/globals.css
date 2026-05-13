@@ -1,0 +1,11 @@
+/* ============================================================
+   FILE: app/globals.css
+   PURPOSE: Global stylesheet — imports Tailwind base styles
+   LAST CHANGED: May 13, 2026
+   WHY IT EXISTS: Entry point for all CSS on the site
+   ⚠️ DO NOT CHANGE: The three @tailwind lines — they load Tailwind
+   ============================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
