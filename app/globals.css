@@ -1,11 +1,82 @@
 /* ============================================================
    FILE: app/globals.css
-   PURPOSE: Global stylesheet — imports Tailwind base styles
+   PURPOSE: Global stylesheet — Tailwind + self-hosted fonts
    LAST CHANGED: May 13, 2026
    WHY IT EXISTS: Entry point for all CSS on the site
-   ⚠️ DO NOT CHANGE: The three @tailwind lines — they load Tailwind
+   ⚠️ DO NOT CHANGE: @tailwind lines or @font-face src paths
    ============================================================ */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* — Inter — */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter_18pt-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter_18pt-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter_24pt-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter_28pt-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter_28pt-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* — Merriweather — */
+@font-face {
+  font-family: 'Merriweather';
+  src: url('/fonts/Merriweather-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Merriweather';
+  src: url('/fonts/Merriweather-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Merriweather';
+  src: url('/fonts/Merriweather UltraBold.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* — Apply fonts globally — */
+html {
+  font-family: 'Inter', sans-serif;
+}
