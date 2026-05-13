@@ -1,9 +1,9 @@
 // ============================================================
 // FILE: tailwind.config.js
-// PURPOSE: Tailwind CSS configuration for Learn World
+// PURPOSE: Tailwind config — includes custom font families
 // LAST CHANGED: May 13, 2026
-// WHY IT EXISTS: Tells Tailwind which files to scan for class names
-// ⚠️ DO NOT CHANGE: The `content` paths — removing them breaks purging
+// WHY IT EXISTS: Tells Tailwind which files to scan + custom fonts
+// ⚠️ DO NOT CHANGE: content paths or fontFamily keys
 // ============================================================
 
 /** @type {import('tailwindcss').Config} */
@@ -13,7 +13,12 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        serif: ['Merriweather', 'serif'],
+      },
+    },
   },
   plugins: [],
 };
