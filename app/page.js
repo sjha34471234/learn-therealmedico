@@ -6,6 +6,7 @@
 // ⚠️ DO NOT CHANGE: Keep this a server component (no 'use client')
 // ============================================================
 
+import "./globals.css";
 export default function Home() {
   return (
     <main style={{ 
