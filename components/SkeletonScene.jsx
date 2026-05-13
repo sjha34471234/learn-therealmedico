@@ -1,5 +1,5 @@
 // ============================================================
-// FILE: components/SkeletonScene.jsx
+// FILE: components/SkeletonScene.jsx 
 // PURPOSE: Interactive 3D male skeleton with orbit controls and tap-to-label
 // LAST CHANGED: May 13, 2026
 // WHY IT EXISTS: Model page for /models/skeleton
