@@ -3,7 +3,7 @@
 // PURPOSE: Interactive 3D DNA double helix — hero scene
 // LAST CHANGED: May 13, 2026
 // WHY IT EXISTS: Main visual centrepiece of Learn World landing page
-// ⚠️ DO NOT CHANGE: Must stay client component. onPointerOver handles both mouse and touch via R3F.
+// ⚠️ DO NOT CHANGE: Must stay client component. onPointerDown handles touch on iPad.
 // ============================================================
 
 'use client';
@@ -17,26 +17,26 @@ const DNA_PARTS = [
   { label: 'Thymine (T)', description: 'Pyrimidine — pairs with Adenine', color: '#ffd166' },
   { label: 'Guanine (G)', description: 'Purine base — pairs with Cytosine', color: '#06d6a0' },
   { label: 'Cytosine (C)', description: 'Pyrimidine — pairs with Guanine', color: '#63caff' },
-  { label: 'Phosphate Group', description: 'Forms the DNA backbone', color: '#a78bfa' },
-  { label: 'Deoxyribose Sugar', description: 'Sugar of the backbone', color: '#fb923c' },
+  { label: 'Phosphate Group', description: 'Forms the DNA backbone', color: '#c084fc' },
+  { label: 'Deoxyribose Sugar', description: 'Sugar component of the backbone', color: '#fb923c' },
 ];
 
 function HoverLabel({ label, description, color }) {
   return (
     <div style={{
-      background: 'rgba(2,8,23,0.85)',
-      border: `1px solid ${color}55`,
+      background: 'rgba(2,8,23,0.92)',
+      border: `1px solid ${color}66`,
       borderRadius: '10px',
-      padding: '8px 12px',
+      padding: '9px 14px',
       color: '#fff',
-      minWidth: '160px',
-      backdropFilter: 'blur(10px)',
-      boxShadow: `0 0 16px ${color}44`,
+      minWidth: '165px',
+      backdropFilter: 'blur(12px)',
+      boxShadow: `0 0 20px ${color}55`,
       pointerEvents: 'none',
       fontFamily: 'Inter, sans-serif',
     }}>
-      <div style={{ color, fontWeight: 700, fontSize: '13px', marginBottom: '3px' }}>{label}</div>
-      <div style={{ color: '#94a3b8', fontSize: '11px' }}>{description}</div>
+      <div style={{ color, fontWeight: 700, fontSize: '13px', marginBottom: '4px' }}>{label}</div>
+      <div style={{ color: '#94a3b8', fontSize: '11px', lineHeight: 1.5 }}>{description}</div>
     </div>
   );
 }
@@ -46,11 +46,11 @@ function Nucleotide({ position, partIndex, side }) {
   const meshRef = useRef();
   const part = DNA_PARTS[partIndex % DNA_PARTS.length];
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (meshRef.current) {
-      meshRef.current.scale.setScalar(
-        active ? 1.4 : 1 + Math.sin(Date.now() * 0.002 + partIndex) * 0.03
-      );
+      const breathe = 1 + Math.sin(clock.elapsedTime * 1.5 + partIndex * 0.5) * 0.04;
+      meshRef.current.scale.setScalar(active ? 1.45 : breathe);
+      meshRef.current.material.emissiveIntensity = active ? 1.6 : 0.65;
     }
   });
 
@@ -60,21 +60,20 @@ function Nucleotide({ position, partIndex, side }) {
       position={position}
       onPointerOver={(e) => { e.stopPropagation(); setActive(true); }}
       onPointerOut={() => setActive(false)}
-      onPointerDown={(e) => { e.stopPropagation(); setActive(true); }}
-      onPointerUp={() => setActive(false)}
+      onPointerDown={(e) => { e.stopPropagation(); setActive(v => !v); }}
     >
-      <sphereGeometry args={[0.22, 20, 20]} />
+      <sphereGeometry args={[0.23, 24, 24]} />
       <meshStandardMaterial
         color={part.color}
         emissive={part.color}
-        emissiveIntensity={active ? 1.2 : 0.4}
-        roughness={0.15}
-        metalness={0.2}
+        emissiveIntensity={0.65}
+        roughness={0.1}
+        metalness={0.25}
       />
       {active && (
         <Html
           distanceFactor={8}
-          position={[side === 'left' ? -0.5 : 0.5, 0.5, 0]}
+          position={[side === 'left' ? -0.6 : 0.6, 0.55, 0]}
           center
         >
           <HoverLabel label={part.label} description={part.description} color={part.color} />
@@ -91,7 +90,7 @@ function DnaHelix({ scrollY }) {
   const V_SPACING = 0.52;
   const TWIST = (2 * Math.PI) / 10;
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += 0.005;
       groupRef.current.rotation.x = scrollY * 0.0015;
@@ -110,30 +109,35 @@ function DnaHelix({ scrollY }) {
 
   return (
     <group ref={groupRef}>
+      {/* Dark backdrop to separate DNA from background */}
+      <mesh position={[0, 0, -0.5]}>
+        <cylinderGeometry args={[2.2, 2.2, RUNGS * V_SPACING + 1, 32]} />
+        <meshStandardMaterial color="#020817" transparent opacity={0.55} />
+      </mesh>
+
       {items.map(({ i, angle, y, x1, z1, x2, z2 }) => (
         <group key={i}>
-          {/* Left nucleotide */}
           <Nucleotide position={[x1, y, z1]} partIndex={i} side="left" />
-          {/* Right nucleotide */}
           <Nucleotide position={[x2, y, z2]} partIndex={i + 3} side="right" />
 
-          {/* Bridge connecting them */}
+          {/* Bridge */}
           <mesh
             position={[(x1 + x2) / 2, y, (z1 + z2) / 2]}
             rotation={[0, -angle, Math.PI / 2]}
           >
-            <cylinderGeometry args={[0.03, 0.03, RADIUS * 2, 8]} />
-            <meshStandardMaterial color="#1e3a5f" roughness={0.6} />
+            <cylinderGeometry args={[0.035, 0.035, RADIUS * 2, 8]} />
+            <meshStandardMaterial color="#1e40af" emissive="#3b82f6" emissiveIntensity={0.3} roughness={0.5} />
           </mesh>
 
-          {/* Backbone spheres */}
+          {/* Backbone strand 1 */}
           <mesh position={[x1, y, z1]}>
-            <sphereGeometry args={[0.08, 8, 8]} />
-            <meshStandardMaterial color="#a78bfa" emissive="#a78bfa" emissiveIntensity={0.3} />
+            <sphereGeometry args={[0.09, 10, 10]} />
+            <meshStandardMaterial color="#c084fc" emissive="#c084fc" emissiveIntensity={0.6} />
           </mesh>
+          {/* Backbone strand 2 */}
           <mesh position={[x2, y, z2]}>
-            <sphereGeometry args={[0.08, 8, 8]} />
-            <meshStandardMaterial color="#fb923c" emissive="#fb923c" emissiveIntensity={0.3} />
+            <sphereGeometry args={[0.09, 10, 10]} />
+            <meshStandardMaterial color="#fb923c" emissive="#fb923c" emissiveIntensity={0.6} />
           </mesh>
         </group>
       ))}
@@ -145,13 +149,13 @@ export default function DnaScene({ scrollY }) {
   return (
     <Canvas
       camera={{ position: [0, 0, 9], fov: 45 }}
-      style={{ background: 'transparent' }}
+      style={{ background: 'transparent', width: '100%', height: '100%' }}
       gl={{ antialias: true }}
     >
-      <ambientLight intensity={0.3} />
-      <pointLight position={[4, 6, 4]} intensity={2} color="#63caff" />
-      <pointLight position={[-4, -6, -4]} intensity={1} color="#a78bfa" />
-      <pointLight position={[0, 0, 6]} intensity={0.5} color="#ffffff" />
+      <ambientLight intensity={0.2} />
+      <pointLight position={[3, 5, 5]} intensity={3} color="#63caff" />
+      <pointLight position={[-3, -5, -5]} intensity={1.5} color="#c084fc" />
+      <pointLight position={[0, 0, 7]} intensity={1} color="#ffffff" />
       <DnaHelix scrollY={scrollY} />
       <OrbitControls
         enableZoom={false}
