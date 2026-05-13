@@ -9,7 +9,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useRouter } = 'next/navigation';
+import { useRouter } from 'next/navigation';
+
 
 const MODELS = [
   { slug: 'dna', name: 'DNA Double Helix', category: 'Cell Biology', tags: ['genetics', 'molecular', 'nucleus'], description: 'Explore the structure of DNA — bases, backbone, and the double helix.' },
