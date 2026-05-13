@@ -19,6 +19,7 @@ const MODELS = [
   { slug: 'lung', name: 'Lungs & Bronchi', category: 'Anatomy', tags: ['respiratory', 'organ', 'pulmonary'], description: 'Trace the airway from trachea to alveoli in 3D.' },
   { slug: 'cell', name: 'Human Cell', category: 'Cell Biology', tags: ['organelles', 'molecular', 'nucleus'], description: 'Navigate the organelles — mitochondria, ER, Golgi, and more.' },
   { slug: 'spine', name: 'Vertebral Column', category: 'Musculoskeletal', tags: ['bones', 'orthopedics', 'spine'], description: 'Identify each vertebra, disc, and spinal nerve root.' },
+  { slug: 'skeleton', name: 'Male Skeleton', category: 'Musculoskeletal', tags: ['skeleton', 'bones', 'anatomy', 'osteology', 'musculoskeletal'], description: 'Full human male skeleton with 206 bones. Tap any hotspot to explore bone names and functions.' },
 ];
 
 const CATEGORIES = ['All', 'Anatomy', 'Cell Biology', 'Neuroanatomy', 'Musculoskeletal'];
