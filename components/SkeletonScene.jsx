@@ -94,7 +94,7 @@ export default function SkeletonScene() {
   return (
     <div style={{ width: '100%', height: '70vh' }}>
       <Canvas
-        camera={{ position: [0, 0, 50], fov: 80 }}
+        camera={{ position: [0, -2, 40], fov: 80 }}
         onPointerMissed={() => setActiveLabel(null)}
       >
         <ambientLight intensity={0.8} />
