@@ -11,7 +11,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
-const SkeletonScene = dynamic(() => import('@/components/SkeletonScene'), {
+const SkeletonScene = dynamic(() => import('../../../components/SkeletonScene'), {
   ssr: false,
   loading: () => (
     <div style={{ color: '#fff', textAlign: 'center', paddingTop: '40vh', fontFamily: 'Inter, sans-serif' }}>
