@@ -19,10 +19,21 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  // Lock scroll on landing page only
+  document.body.style.overflow = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
+
+  const onScroll = () => setScrollY(window.scrollY);
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  return () => {
+    // Restore scroll when leaving this page
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    window.removeEventListener('scroll', onScroll);
+  };
+}, []);
+
 
   return (
     <main style={{ background: '#020817', minHeight: '100vh', overflow: 'hidden' }}>
