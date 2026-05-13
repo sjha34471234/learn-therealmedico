@@ -1,14 +1,29 @@
 /* ============================================================
    FILE: app/globals.css
-   PURPOSE: Global stylesheet — Tailwind + self-hosted fonts
+   PURPOSE: Global stylesheet — Tailwind + fonts + hard reset
    LAST CHANGED: May 13, 2026
    WHY IT EXISTS: Entry point for all CSS on the site
-   ⚠️ DO NOT CHANGE: @tailwind lines or @font-face src paths
+   ⚠️ DO NOT CHANGE: Reset block is critical — removes browser white borders and scroll
    ============================================================ */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* — Hard reset — */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #020817;
+  -webkit-tap-highlight-color: transparent;
+}
 
 /* — Inter — */
 @font-face {
@@ -18,7 +33,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Inter';
   src: url('/fonts/Inter_18pt-Regular.woff2') format('woff2');
@@ -26,7 +40,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Inter';
   src: url('/fonts/Inter_24pt-Medium.woff2') format('woff2');
@@ -34,7 +47,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Inter';
   src: url('/fonts/Inter_28pt-SemiBold.woff2') format('woff2');
@@ -42,7 +54,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Inter';
   src: url('/fonts/Inter_28pt-Bold.woff2') format('woff2');
@@ -59,7 +70,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Merriweather';
   src: url('/fonts/Merriweather-Bold.woff2') format('woff2');
@@ -67,7 +77,6 @@
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Merriweather';
   src: url('/fonts/Merriweather UltraBold.woff2') format('woff2');
@@ -76,7 +85,6 @@
   font-display: swap;
 }
 
-/* — Apply fonts globally — */
 html {
   font-family: 'Inter', sans-serif;
 }
