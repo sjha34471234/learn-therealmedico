@@ -181,6 +181,9 @@ export default function SkeletonScene() {
         touchAction: 'none',
         WebkitTapHighlightColor: 'transparent',
         userSelect: 'none',
+        WebkitUserSelect: 'none',
+        MozUserSelect: 'none',
+        msUserSelect: 'none',
         cursor: 'grab',
       }}
     >
@@ -207,8 +210,8 @@ export default function SkeletonScene() {
           zoomSpeed={0.8}
           rotateSpeed={0.6}
           zoomToCursor={true}
-          minDistance={15}
-          maxDistance={60}
+          minDistance={5}
+          maxDistance={35}
           minPolarAngle={Math.PI * 0.05}
           maxPolarAngle={Math.PI * 0.95}
         />
