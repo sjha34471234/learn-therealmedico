@@ -1,7 +1,7 @@
 // ============================================================
 // FILE: components/SkeletonScene.jsx
 // PURPOSE: Interactive 3D male skeleton with orbit controls and tap-to-label
-// LAST CHANGED: May 14, 2026 — Fixed resize glitch, mouse zoom, scroll conflict, bone positions
+// LAST CHANGED: May 14, 2026 — Bone positions calculated from actual GLB bounding box
 // WHY IT EXISTS: Model page for /models/skeleton
 // ⚠️ DO NOT CHANGE: Must stay a client component. Never import at top level — always use next/dynamic with ssr:false
 // ============================================================
@@ -12,17 +12,18 @@ import { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Html, Center, Bounds } from '@react-three/drei';
 
+// Positions derived from actual GLB bounding box (world Y after Center + rotation)
 const BONE_LABELS = [
-  { id: 'skull',    position: [0, 3.2, 0],      name: 'Skull (Cranium)',  desc: '22 bones protect the brain and form the face.' },
-  { id: 'clavicle', position: [0.5, 2.4, 0.1],  name: 'Clavicle',        desc: 'The collarbone — connects shoulder to sternum.' },
-  { id: 'sternum',  position: [0, 2.2, 0.2],    name: 'Sternum',          desc: 'Breastbone — anchors the ribs at the front.' },
-  { id: 'humerus',  position: [0.9, 2.0, 0],    name: 'Humerus',          desc: 'Upper arm bone — joins shoulder to elbow.' },
-  { id: 'spine',    position: [0, 2.0, -0.1],   name: 'Vertebral Column', desc: '33 vertebrae — supports the body and protects the spinal cord.' },
-  { id: 'pelvis',   position: [0, 1.2, 0.1],    name: 'Pelvis',           desc: 'Hip bones — supports the trunk and connects to the legs.' },
-  { id: 'femur',    position: [0.35, 0.6, 0],   name: 'Femur',            desc: 'Longest bone in the body — the thigh bone.' },
-  { id: 'tibia',    position: [0.35, -0.3, 0.1], name: 'Tibia',           desc: 'Shin bone — main weight-bearing bone of the lower leg.' },
-  { id: 'radius',   position: [0.9, 1.4, 0.1],  name: 'Radius',           desc: 'Lateral forearm bone — rotates to turn the palm.' },
-  { id: 'fibula',   position: [0.42, -0.3, 0],  name: 'Fibula',           desc: 'Slender bone running alongside the tibia.' },
+  { id: 'skull',    position: [0,    7.6,  0.5],  name: 'Skull (Cranium)',  desc: '22 bones protect the brain and form the face.' },
+  { id: 'clavicle', position: [1.2,  5.8,  0.3],  name: 'Clavicle',        desc: 'The collarbone — connects shoulder to sternum.' },
+  { id: 'sternum',  position: [0,    5.4,  1.0],  name: 'Sternum',          desc: 'Breastbone — anchors the ribs at the front.' },
+  { id: 'humerus',  position: [2.2,  4.8,  0],    name: 'Humerus',          desc: 'Upper arm bone — joins shoulder to elbow.' },
+  { id: 'spine',    position: [0,    4.0, -0.5],  name: 'Vertebral Column', desc: '33 vertebrae — supports the body and protects the spinal cord.' },
+  { id: 'radius',   position: [2.6,  2.8,  0.3],  name: 'Radius',           desc: 'Lateral forearm bone — rotates to turn the palm.' },
+  { id: 'pelvis',   position: [0,    1.8,  0.5],  name: 'Pelvis',           desc: 'Hip bones — supports the trunk and connects to the legs.' },
+  { id: 'femur',    position: [0.9, -0.2,  0],    name: 'Femur',            desc: 'Longest bone in the body — the thigh bone.' },
+  { id: 'tibia',    position: [0.9, -4.0,  0.3],  name: 'Tibia',            desc: 'Shin bone — main weight-bearing bone of the lower leg.' },
+  { id: 'fibula',   position: [1.2, -4.0,  0],    name: 'Fibula',           desc: 'Slender bone running alongside the tibia.' },
 ];
 
 function SkeletonModel({ activeLabel, setActiveLabel }) {
@@ -49,17 +50,17 @@ function SkeletonModel({ activeLabel, setActiveLabel }) {
               setActiveLabel(activeLabel === bone.id ? null : bone.id);
             }}
           >
-            <sphereGeometry args={[0.06, 12, 12]} />
+            <sphereGeometry args={[0.18, 12, 12]} />
             <meshStandardMaterial
               color={activeLabel === bone.id ? '#00ffcc' : '#ffffff'}
               emissive={activeLabel === bone.id ? '#00ffcc' : '#aaaaaa'}
-              emissiveIntensity={activeLabel === bone.id ? 1.2 : 0.5}
+              emissiveIntensity={activeLabel === bone.id ? 1.4 : 0.6}
               transparent
               opacity={0.9}
             />
 
             {activeLabel === bone.id && (
-              <Html distanceFactor={10} center>
+              <Html distanceFactor={20} center>
                 <div style={{
                   background: 'rgba(0,0,0,0.88)',
                   border: '1px solid #00ffcc',
@@ -90,7 +91,6 @@ function SkeletonModel({ activeLabel, setActiveLabel }) {
 
 export default function SkeletonScene() {
   const [activeLabel, setActiveLabel] = useState(null);
-  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div
@@ -99,18 +99,13 @@ export default function SkeletonScene() {
         height: '75vh',
         borderRadius: '16px',
         overflow: 'hidden',
-        // Prevents scroll conflict — page scrolls normally, canvas zooms on hover
         touchAction: 'none',
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <Canvas
         camera={{ position: [0, -2, 40], fov: 80 }}
         onPointerMissed={() => setActiveLabel(null)}
         style={{ background: 'transparent' }}
-        // Prevent canvas from capturing scroll events when not hovered
-        onWheel={(e) => { if (!isHovered) e.stopPropagation(); }}
       >
         <ambientLight intensity={0.8} />
         <directionalLight position={[3, 5, 3]} intensity={1.2} />
@@ -129,7 +124,6 @@ export default function SkeletonScene() {
           maxDistance={80}
           minPolarAngle={Math.PI * 0.1}
           maxPolarAngle={Math.PI * 0.9}
-          // Makes zoom follow cursor position, not just centre
           zoomToCursor={true}
         />
       </Canvas>
