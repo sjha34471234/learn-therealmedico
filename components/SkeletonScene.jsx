@@ -1,23 +1,18 @@
 // ============================================================
 // FILE: components/SkeletonScene.jsx
 // PURPOSE: Interactive 3D male skeleton with orbit controls and tap-to-label
-// LAST CHANGED: May 14, 2026 — Accurate bone positions from GLB bounding box analysis,
-//               smooth scroll/zoom, no text selection, min/max zoom locked
+// LAST CHANGED: May 14, 2026
 // WHY IT EXISTS: Model page for /models/skeleton
-// ⚠️ DO NOT CHANGE: Must stay a client component. Never import at top level
-//                   always use next/dynamic with ssr:false
+// DO NOT CHANGE: Must stay a client component. Never import at top level.
+//                Always use next/dynamic with ssr:false
 // ============================================================
 
-'use client';
-
+‘use client’;
 
 import { useRef, useState, useEffect } from ‘react’;
 import { Canvas, useFrame } from ‘@react-three/fiber’;
 import { useGLTF, OrbitControls, Html, Center, Bounds } from ‘@react-three/drei’;
 
-// Positions calculated from actual GLB bounding box + rotation matrix
-// Model total height: 15.89 units. Y=0 is the geometric center.
-// Skull top ≈ Y+7.8, Feet ≈ Y-15.6 (model is not symmetric — legs are long)
 const BONE_LABELS = [
 {
 id: ‘skull’,
@@ -28,7 +23,7 @@ desc: ‘22 bones fused together. Protects the brain and forms the face. The onl
 {
 id: ‘cervical’,
 position: [0.8, 5.6, 0.2],
-name: ‘Cervical Spine (C1–C7)’,
+name: ‘Cervical Spine (C1-C7)’,
 desc: ‘7 vertebrae forming the neck. C1 (atlas) and C2 (axis) allow head rotation and nodding.’,
 },
 {
@@ -47,7 +42,7 @@ desc: ‘The breastbone. Anchors the ribs at the front of the chest. Has 3 parts
 id: ‘ribs’,
 position: [2.2, 3.6, 0.5],
 name: ‘Rib Cage’,
-desc: ‘12 pairs of ribs. Protects the heart and lungs. Ribs 11–12 are “floating” — not attached to sternum.’,
+desc: ‘12 pairs of ribs. Protects the heart and lungs. Ribs 11-12 are floating ribs - not attached to sternum.’,
 },
 {
 id: ‘humerus’,
@@ -58,14 +53,14 @@ desc: ‘The upper arm bone. Ball-and-socket joint at shoulder, hinge joint at e
 {
 id: ‘lumbar’,
 position: [0.8, 1.3, -0.3],
-name: ‘Lumbar Spine (L1–L5)’,
+name: ‘Lumbar Spine (L1-L5)’,
 desc: ‘5 large vertebrae of the lower back. Bears most of the body weight. Common site of back pain.’,
 },
 {
 id: ‘radius’,
 position: [3.2, 0.5, 0.3],
-name: ‘Radius & Ulna’,
-desc: ‘Two forearm bones. The radius rotates to pronate/supinate the hand. The ulna forms the elbow point.’,
+name: ‘Radius and Ulna’,
+desc: ‘Two forearm bones. The radius rotates to pronate or supinate the hand. The ulna forms the elbow point.’,
 },
 {
 id: ‘pelvis’,
@@ -77,7 +72,7 @@ desc: ‘Formed by ilium, ischium, and pubis. Transfers body weight to legs. Mal
 id: ‘femur’,
 position: [1.2, -4.4, 0.3],
 name: ‘Femur’,
-desc: ‘The thigh bone — longest and strongest bone in the body. Its neck is a common fracture site in elderly.’,
+desc: ‘The thigh bone - longest and strongest bone in the body. Its neck is a common fracture site in elderly.’,
 },
 {
 id: ‘patella’,
@@ -89,7 +84,7 @@ desc: ‘The kneecap. A sesamoid bone embedded in the quadriceps tendon. Protect
 id: ‘tibia’,
 position: [0.8, -9.2, 0.5],
 name: ‘Tibia’,
-desc: ‘The shin bone — main weight-bearing bone of the lower leg. Medial malleolus forms the inner ankle bump.’,
+desc: ‘The shin bone - main weight-bearing bone of the lower leg. Medial malleolus forms the inner ankle bump.’,
 },
 {
 id: ‘fibula’,
@@ -170,7 +165,6 @@ export default function SkeletonScene() {
 const [activeLabel, setActiveLabel] = useState(null);
 const containerRef = useRef(null);
 
-// Prevent text selection on drag inside canvas
 useEffect(() => {
 const el = containerRef.current;
 if (!el) return;
@@ -187,9 +181,7 @@ width: ‘100%’,
 height: ‘78vh’,
 borderRadius: ‘16px’,
 overflow: ‘hidden’,
-// touchAction none = gives full control to Three.js on touch
 touchAction: ‘none’,
-// Prevents blue highlight on tap (iOS)
 WebkitTapHighlightColor: ‘transparent’,
 userSelect: ‘none’,
 cursor: ‘grab’,
@@ -202,7 +194,7 @@ gl={{ antialias: true, alpha: true }}
 style={{ background: ‘transparent’ }}
 >
 <ambientLight intensity={0.9} />
-<directionalLight position={[4, 6, 4]} intensity={1.3} castShadow />
+<directionalLight position={[4, 6, 4]} intensity={1.3} />
 <directionalLight position={[-4, 2, -2]} intensity={0.4} color=”#6688ff” />
 <pointLight position={[0, 10, 5]} intensity={0.6} color=”#ffffff” />
 
@@ -214,13 +206,13 @@ style={{ background: ‘transparent’ }}
     <OrbitControls
       enablePan={false}
       enableZoom={true}
-      enableDamping={true}        // Smooth inertia on all movement
-      dampingFactor={0.06}        // Lower = more feather-like glide
-      zoomSpeed={0.8}             // Gentle zoom
-      rotateSpeed={0.6}           // Smooth rotation
-      zoomToCursor={true}         // Zoom follows cursor/pinch point
-      minDistance={15}            // Can't zoom in too close
-      maxDistance={60}            // Can't zoom out too far
+      enableDamping={true}
+      dampingFactor={0.06}
+      zoomSpeed={0.8}
+      rotateSpeed={0.6}
+      zoomToCursor={true}
+      minDistance={15}
+      maxDistance={60}
       minPolarAngle={Math.PI * 0.05}
       maxPolarAngle={Math.PI * 0.95}
     />
