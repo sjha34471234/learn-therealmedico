@@ -90,6 +90,7 @@ function SkeletonModel({ activeLabel, setActiveLabel }) {
 
 export default function SkeletonScene() {
   const [activeLabel, setActiveLabel] = useState(null);
+// LAST CHANGED: May 13, 2026 — Camera tuned to position[0,-2,40] fov:80 for full skeleton fit on iPad
 
   return (
     <div style={{ width: '100%', height: '70vh' }}>
