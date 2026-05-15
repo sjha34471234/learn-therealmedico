@@ -1,9 +1,9 @@
 // ============================================================
 // FILE: app/models/skeleton/page.js
 // PURPOSE: Individual model page for the male skeleton
-// LAST CHANGED: May 13, 2026
-// WHY IT EXISTS: Routed from /models catalogue — slug: skeleton
-// ⚠️ DO NOT CHANGE: SkeletonScene must stay inside dynamic() with ssr:false
+// LAST CHANGED: May 15, 2026
+// WHY IT EXISTS: Routed from /models catalogue - slug: skeleton
+// DO NOT CHANGE: SkeletonScene must stay inside dynamic() with ssr:false
 // ============================================================
 
 'use client';
@@ -14,7 +14,7 @@ import Link from 'next/link';
 const SkeletonScene = dynamic(() => import('../../../components/SkeletonScene'), {
   ssr: false,
   loading: () => (
-    <div style={{ color: '#fff', textAlign: 'center', paddingTop: '40vh', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ color: '#fff', textAlign: 'center', paddingTop: '200px', fontFamily: 'Inter, sans-serif' }}>
       Loading skeleton...
     </div>
   ),
@@ -47,7 +47,7 @@ export default function SkeletonPage() {
           alignItems: 'center',
           gap: '6px',
         }}>
-          ← Back to Models
+          Back to Models
         </Link>
         <div style={{ fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           Musculoskeletal
@@ -65,7 +65,7 @@ export default function SkeletonPage() {
         }}>
           Male Skeleton
         </h1>
-        <p style={{ color: '#888', fontSize: '14px', marginTop: '8px' }}>
+        <p style={{ color: '#888', fontSize: '14px', marginTop: '8px', marginBottom: 0 }}>
           206 bones · Tap the glowing dots to explore
         </p>
       </div>
@@ -77,11 +77,10 @@ export default function SkeletonPage() {
 
       {/* Info panel */}
       <div style={{
-        padding: '24px',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
+        padding: '20px 24px 40px',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        gap: '16px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gap: '12px',
       }}>
         {[
           { label: 'Total Bones', value: '206' },
@@ -95,7 +94,7 @@ export default function SkeletonPage() {
             padding: '14px',
             border: '1px solid rgba(255,255,255,0.08)',
           }}>
-            <div style={{ color: '#00ffcc', fontSize: '12px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div style={{ color: '#00ffcc', fontSize: '11px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               {stat.label}
             </div>
             <div style={{ fontWeight: 600, fontSize: '15px' }}>{stat.value}</div>
