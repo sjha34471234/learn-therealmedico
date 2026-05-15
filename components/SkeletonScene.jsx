@@ -1,196 +1,284 @@
 // ============================================================
 // FILE: components/SkeletonScene.jsx
-// PURPOSE: Interactive 3D male skeleton with orbit controls and tap-to-label
+// PURPOSE: Interactive 3D skeleton - click actual bones to label them
 // LAST CHANGED: May 15, 2026
 // WHY IT EXISTS: Model page for /models/skeleton
 // DO NOT CHANGE: Must stay a client component. Never import at top level.
 //                Always use next/dynamic with ssr:false
 // ============================================================
 
-'use client';
+‘use client’;
 
-import { useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Html, Center, Bounds } from '@react-three/drei';
+import { useRef, useState, useEffect, useCallback } from ‘react’;
+import { Canvas } from ‘@react-three/fiber’;
+import { useGLTF, OrbitControls, Html, Center, Bounds, Environment } from ‘@react-three/drei’;
 
-const BONE_LABELS = [
-  // SKULL - midline X=0, slight Z forward
-  { id: 'frontal',    position: [ 0.0,  7.60,  0.5], name: 'Frontal Bone',              desc: 'Forms the forehead and roof of the eye sockets. Contains the frontal sinuses.' },
-  { id: 'parietal',   position: [ 0.0,  7.50,  0.0], name: 'Parietal Bones',            desc: 'Two bones forming the top and sides of the skull. Meet at the sagittal suture.' },
-  { id: 'temporal',   position: [ 1.20,  7.20,  0.2], name: 'Temporal Bone',            desc: 'Houses the middle and inner ear. Contains the mastoid process.' },
-  { id: 'occipital',  position: [ 0.0,  7.00, -0.6], name: 'Occipital Bone',            desc: 'Back and base of skull. Has the foramen magnum where the spinal cord exits.' },
-  { id: 'zygomatic',  position: [ 1.30,  6.95,  0.5], name: 'Zygomatic (Cheekbone)',    desc: 'Forms the cheek prominence and part of the eye socket floor.' },
-  { id: 'nasal',      position: [ 0.30,  7.15,  0.7], name: 'Nasal Bones',              desc: 'Two small bones forming the bridge of the nose.' },
-  { id: 'mandible',   position: [ 0.20,  6.65,  0.6], name: 'Mandible (Lower Jaw)',     desc: 'Only movable skull bone. Contains lower teeth. Site of the TMJ joint.' },
-  // SPINE - strictly midline X=0
-  { id: 'atlas',      position: [ 0.0,  6.30,  0.1], name: 'C1 - Atlas',                desc: 'Supports the skull. Allows the yes nodding movement.' },
-  { id: 'axis',       position: [ 0.0,  6.05,  0.1], name: 'C2 - Axis',                 desc: 'Has the odontoid peg (dens). Allows the no rotation movement.' },
-  { id: 'c7',         position: [ 0.0,  5.80,  0.0], name: 'C7 - Vertebra Prominens',   desc: 'Easily felt spinous process at the base of the neck.' },
-  { id: 'thoracic',   position: [ 0.0,  4.80, -0.2], name: 'Thoracic Spine (T1-T12)',   desc: '12 vertebrae of mid-back. Each articulates with a pair of ribs.' },
-  { id: 'lumbar',     position: [ 0.0,  3.40, -0.2], name: 'Lumbar Spine (L1-L5)',      desc: '5 large vertebrae of lower back. Common site of disc herniation.' },
-  { id: 'sacrum',     position: [ 0.0,  2.50, -0.2], name: 'Sacrum',                    desc: '5 fused vertebrae. Connects spine to pelvis via SI joints.' },
-  { id: 'coccyx',     position: [ 0.0,  2.10, -0.2], name: 'Coccyx (Tailbone)',         desc: '3-5 fused vertebrae. Attachment for pelvic floor muscles.' },
-  // STERNUM - midline
-  { id: 'manubrium',  position: [ 0.0,  5.55,  0.7], name: 'Manubrium',                 desc: 'Upper sternum. Articulates with clavicles and first two ribs.' },
-  { id: 'sternum',    position: [ 0.0,  5.00,  0.7], name: 'Sternum Body',              desc: 'Middle breastbone. Attaches ribs 2-7 via costal cartilages.' },
-  { id: 'xiphoid',    position: [ 0.0,  4.55,  0.6], name: 'Xiphoid Process',           desc: 'Lowest sternum. CPR hand placement landmark.' },
-  // RIBS - right side, X ~2.0
-  { id: 'rib_true',   position: [ 1.90,  5.15,  0.3], name: 'True Ribs (1-7)',          desc: 'Directly attached to sternum via costal cartilage.' },
-  { id: 'rib_false',  position: [ 2.00,  4.60,  0.1], name: 'False Ribs (8-10)',        desc: 'Attach to rib 7 cartilage, not directly to sternum.' },
-  { id: 'rib_float',  position: [ 1.80,  4.10,  0.0], name: 'Floating Ribs (11-12)',    desc: 'No anterior attachment. Only connect to thoracic vertebrae.' },
-  // SHOULDER RIGHT - X ~3.0
-  { id: 'clavicle',   position: [ 1.60,  5.75,  0.4], name: 'Clavicle',                 desc: 'Collarbone. Only bony link between arm and axial skeleton. Most fractured bone.' },
-  { id: 'acromion',   position: [ 2.80,  5.65,  0.0], name: 'Acromion',                 desc: 'Tip of the shoulder. Forms the AC joint with the clavicle.' },
-  { id: 'scapula',    position: [ 2.40,  5.30, -0.5], name: 'Scapula (Shoulder Blade)', desc: 'Connects humerus to clavicle. Glenoid cavity forms the shoulder socket.' },
-  // ARM RIGHT
-  { id: 'humerus_h',  position: [ 3.00,  5.55,  0.0], name: 'Humeral Head',             desc: 'Ball of the shoulder joint. Sits in the glenoid cavity of scapula.' },
-  { id: 'humerus',    position: [ 2.80,  4.30,  0.0], name: 'Humerus',                  desc: 'Upper arm bone. Greater tubercle attaches rotator cuff muscles.' },
-  { id: 'olecranon',  position: [ 2.60,  3.30, -0.3], name: 'Olecranon',                desc: 'The elbow point. Proximal end of the ulna.' },
-  { id: 'radius',     position: [ 2.70,  2.55,  0.2], name: 'Radius',                   desc: 'Lateral forearm bone. Rotates to pronate and supinate the hand.' },
-  { id: 'ulna',       position: [ 2.50,  2.45,  0.0], name: 'Ulna',                     desc: 'Medial forearm bone. Forms the stable hinge of the elbow.' },
-  { id: 'carpals',    position: [ 2.60,  1.55,  0.2], name: 'Carpal Bones (Wrist)',      desc: '8 small wrist bones. Scaphoid is most commonly fractured in falls.' },
-  { id: 'hand',       position: [ 2.50,  0.90,  0.2], name: 'Metacarpals and Phalanges', desc: '5 metacarpals form the palm. 14 phalanges form the fingers.' },
-  // PELVIS
-  { id: 'iliac',      position: [ 1.60,  3.30,  0.2], name: 'Iliac Crest',              desc: 'Upper rim of ilium. Landmark for IM injections and bone marrow biopsy.' },
-  { id: 'asis',       position: [ 1.50,  3.00,  0.5], name: 'ASIS',                     desc: 'Anterior Superior Iliac Spine. Key clinical landmark for measurements.' },
-  { id: 'pubis',      position: [ 0.20,  2.35,  0.6], name: 'Pubic Symphysis',          desc: 'Joint between pubic bones. Widens slightly during childbirth.' },
-  { id: 'ischium',    position: [ 1.00,  2.00,  0.0], name: 'Ischium',                  desc: 'Lower pelvis. Ischial tuberosities bear your weight when sitting.' },
-  // LEG RIGHT
-  { id: 'femur_h',    position: [ 1.30,  2.65,  0.2], name: 'Femoral Head',             desc: 'Ball of the hip joint. Common fracture site in elderly osteoporosis.' },
-  { id: 'femur',      position: [ 0.90,  0.80,  0.1], name: 'Femur (Thigh Bone)',       desc: 'Longest strongest bone in the body. Greater trochanter palpable on outer thigh.' },
-  { id: 'patella',    position: [ 0.80, -0.80,  0.7], name: 'Patella (Kneecap)',        desc: 'Largest sesamoid bone. Improves leverage of the quadriceps muscle.' },
-  { id: 'fibula_h',   position: [ 1.00, -0.90,  0.2], name: 'Fibula Head',              desc: 'Proximal fibula at the knee. Common peroneal nerve wraps around here.' },
-  { id: 'tibia',      position: [ 0.75, -2.40,  0.3], name: 'Tibia (Shin Bone)',        desc: 'Main weight-bearing bone of lower leg. Subcutaneous anterior border.' },
-  { id: 'fibula',     position: [ 1.00, -2.55,  0.1], name: 'Fibula',                   desc: 'Lateral lower leg. Not weight-bearing. Forms the outer ankle bump.' },
-  { id: 'med_mall',   position: [ 0.55, -4.40,  0.4], name: 'Medial Malleolus',         desc: 'Inner ankle bump. Distal end of tibia. Part of the ankle mortise.' },
-  { id: 'lat_mall',   position: [ 0.95, -4.50,  0.1], name: 'Lateral Malleolus',        desc: 'Outer ankle bump. Distal fibula. Sits lower than medial malleolus.' },
-  { id: 'calcaneus',  position: [ 0.60, -5.20, -0.2], name: 'Calcaneus (Heel Bone)',    desc: 'Largest tarsal bone. Achilles tendon attaches posteriorly.' },
-  { id: 'tarsals',    position: [ 0.50, -5.90,  0.3], name: 'Tarsal Bones',             desc: '7 bones of ankle and back foot. Talus connects leg to foot.' },
-  { id: 'metatarsal', position: [ 0.40, -6.50,  0.3], name: 'Metatarsals and Phalanges', desc: '5 metatarsals form mid-foot. 14 phalanges form the toes.' },
-];
+// Map mesh names (from GLTF) to display info
+const BONE_INFO = {
+// SKULL
+‘Cranium_beige_0’:           { name: ‘Cranium’, desc: ‘The braincase. 8 fused bones protecting the brain. Includes frontal, parietal, temporal, occipital, sphenoid, and ethmoid bones.’ },
+‘Mandible_beige_0’:          { name: ‘Mandible’, desc: ‘The lower jaw. Only movable bone of the skull. Contains the lower teeth and forms the TMJ joint with the temporal bone.’ },
+‘hyoid_beige_0’:             { name: ‘Hyoid Bone’, desc: ‘U-shaped bone in the neck. Only bone not articulating with any other. Supports the tongue and aids swallowing.’ },
+// CERVICAL SPINE
+‘c1_beige_0’:                { name: ‘C1 - Atlas’, desc: ‘First cervical vertebra. Supports the skull. Allows the nodding (yes) movement. Has no vertebral body.’ },
+‘c2_beige_0’:                { name: ‘C2 - Axis’, desc: ‘Second cervical vertebra. Has the odontoid process (dens) that the atlas rotates around. Allows the no rotation movement.’ },
+‘c3_beige_0’:                { name: ‘C3 Vertebra’, desc: ‘Third cervical vertebra. Part of the flexible neck region. Nerve root C3 supplies sensation to the neck.’ },
+‘c4_beige_0’:                { name: ‘C4 Vertebra’, desc: ‘Fourth cervical vertebra. C4 nerve root innervates the diaphragm via the phrenic nerve.’ },
+‘c5_beige_0’:                { name: ‘C5 Vertebra’, desc: ‘Fifth cervical vertebra. C5 nerve root supplies the deltoid and biceps muscles.’ },
+‘c6_beige_0’:                { name: ‘C6 Vertebra’, desc: ‘Sixth cervical vertebra. C6 nerve root supplies the wrist extensors.’ },
+‘c7_beige_0’:                { name: ‘C7 - Vertebra Prominens’, desc: ‘Seventh cervical vertebra. Its long spinous process is easily felt at the base of the neck.’ },
+// THORACIC SPINE
+‘t1_beige_0’:  { name: ‘T1 Vertebra’, desc: ‘First thoracic vertebra. Articulates with the first rib.’ },
+‘t2_beige_0’:  { name: ‘T2 Vertebra’, desc: ‘Second thoracic vertebra.’ },
+‘t3_beige_0’:  { name: ‘T3 Vertebra’, desc: ‘Third thoracic vertebra.’ },
+‘t4_beige_0’:  { name: ‘T4 Vertebra’, desc: ‘Fourth thoracic vertebra. At the level of the sternal angle (angle of Louis).’ },
+‘t5_beige_0’:  { name: ‘T5 Vertebra’, desc: ‘Fifth thoracic vertebra.’ },
+‘t6_beige_0’:  { name: ‘T6 Vertebra’, desc: ‘Sixth thoracic vertebra.’ },
+‘t7_beige_0’:  { name: ‘T7 Vertebra’, desc: ‘Seventh thoracic vertebra.’ },
+‘t8_beige_0’:  { name: ‘T8 Vertebra’, desc: ‘Eighth thoracic vertebra. At the level of the inferior angle of the scapula.’ },
+‘t9_beige_0’:  { name: ‘T9 Vertebra’, desc: ‘Ninth thoracic vertebra.’ },
+‘t10_beige_0’: { name: ‘T10 Vertebra’, desc: ‘Tenth thoracic vertebra.’ },
+‘t11_beige_0’: { name: ‘T11 Vertebra’, desc: ‘Eleventh thoracic vertebra. Articulates with floating rib 11.’ },
+‘t12_beige_0’: { name: ‘T12 Vertebra’, desc: ‘Twelfth thoracic vertebra. Articulates with floating rib 12.’ },
+// LUMBAR SPINE
+‘l1_beige_0’:  { name: ‘L1 Vertebra’, desc: ‘First lumbar vertebra. The spinal cord ends here as the conus medullaris.’ },
+‘l2_beige_0’:  { name: ‘L2 Vertebra’, desc: ‘Second lumbar vertebra.’ },
+‘l3_beige_0’:  { name: ‘L3 Vertebra’, desc: ‘Third lumbar vertebra. Lumbar puncture is commonly performed at L3-L4.’ },
+‘l4_beige_0’:  { name: ‘L4 Vertebra’, desc: ‘Fourth lumbar vertebra. At the level of the iliac crests (Tuffier line).’ },
+‘l5_beige_0’:  { name: ‘L5 Vertebra’, desc: ‘Fifth lumbar vertebra. Most commonly affected in disc herniation.’ },
+// SACRUM & COCCYX
+‘Sacrum_beige_0’:            { name: ‘Sacrum’, desc: ‘5 fused vertebrae forming a triangular bone. Connects the spine to the pelvis via the sacroiliac joints.’ },
+‘Coccyx_beige_0’:            { name: ‘Coccyx’, desc: ‘The tailbone. 3-5 fused rudimentary vertebrae. Attachment point for pelvic floor muscles and the gluteus maximus.’ },
+// STERNUM
+‘Sternum_beige_0’:           { name: ‘Sternum’, desc: ‘The breastbone. Three parts: manubrium, body, and xiphoid process. Connects ribs 1-7 anteriorly.’ },
+‘Xiphoid process_beige_0’:   { name: ‘Xiphoid Process’, desc: ‘Inferior tip of the sternum. Landmark for CPR hand placement. Ossifies in adulthood.’ },
+// RIBS
+‘l_rib1_beige_0’:  { name: ‘Rib 1 (Left)’, desc: ‘First rib. Shortest and most curved rib. True rib - attaches directly to sternum.’ },
+‘r_rib1_beige_0’:  { name: ‘Rib 1 (Right)’, desc: ‘First rib. Shortest and most curved rib. True rib - attaches directly to sternum.’ },
+‘l_rib2_beige_0’:  { name: ‘Rib 2 (Left)’, desc: ‘Second rib. True rib. Attaches at the sternal angle (angle of Louis).’ },
+‘r_rib2_beige_0’:  { name: ‘Rib 2 (Right)’, desc: ‘Second rib. True rib. Attaches at the sternal angle (angle of Louis).’ },
+‘l_rib3_beige_0’:  { name: ‘Rib 3 (Left)’, desc: ‘Third rib. True rib.’ },
+‘r_rib3_beige_0’:  { name: ‘Rib 3 (Right)’, desc: ‘Third rib. True rib.’ },
+‘l_rib4_beige_0’:  { name: ‘Rib 4 (Left)’, desc: ‘Fourth rib. True rib.’ },
+‘r_rib4_beige_0’:  { name: ‘Rib 4 (Right)’, desc: ‘Fourth rib. True rib.’ },
+‘l_rib5_beige_0’:  { name: ‘Rib 5 (Left)’, desc: ‘Fifth rib. True rib.’ },
+‘r_rib5_beige_0’:  { name: ‘Rib 5 (Right)’, desc: ‘Fifth rib. True rib.’ },
+‘l_rib6_beige_0’:  { name: ‘Rib 6 (Left)’, desc: ‘Sixth rib. True rib.’ },
+‘r_rib6_beige_0’:  { name: ‘Rib 6 (Right)’, desc: ‘Sixth rib. True rib.’ },
+‘l_rib7_beige_0’:  { name: ‘Rib 7 (Left)’, desc: ‘Seventh rib. Last true rib. Attaches directly to sternum.’ },
+‘r_rib7_beige_0’:  { name: ‘Rib 7 (Right)’, desc: ‘Seventh rib. Last true rib. Attaches directly to sternum.’ },
+‘l_rib8_beige_0’:  { name: ‘Rib 8 (Left)’, desc: ‘Eighth rib. False rib - attaches to rib 7 cartilage, not directly to sternum.’ },
+‘r_rib8_beige_0’:  { name: ‘Rib 8 (Right)’, desc: ‘Eighth rib. False rib - attaches to rib 7 cartilage, not directly to sternum.’ },
+‘l_rib9_beige_0’:  { name: ‘Rib 9 (Left)’, desc: ‘Ninth rib. False rib.’ },
+‘r_rib9_beige_0’:  { name: ‘Rib 9 (Right)’, desc: ‘Ninth rib. False rib.’ },
+‘l_rib10_beige_0’: { name: ‘Rib 10 (Left)’, desc: ‘Tenth rib. False rib.’ },
+‘r_rib10_beige_0’: { name: ‘Rib 10 (Right)’, desc: ‘Tenth rib. False rib.’ },
+‘l_rib11_beige_0’: { name: ‘Rib 11 (Left)’, desc: ‘Eleventh rib. Floating rib - no anterior attachment.’ },
+‘r_rib11_beige_0’: { name: ‘Rib 11 (Right)’, desc: ‘Eleventh rib. Floating rib - no anterior attachment.’ },
+‘l_rib12_beige_0’: { name: ‘Rib 12 (Left)’, desc: ‘Twelfth rib. Floating rib - no anterior attachment. Shortest rib.’ },
+‘r_rib12_beige_0’: { name: ‘Rib 12 (Right)’, desc: ‘Twelfth rib. Floating rib - no anterior attachment. Shortest rib.’ },
+// SHOULDER GIRDLE
+‘l_clavicle_beige_0’:  { name: ‘Clavicle (Left)’, desc: ‘The collarbone. Only bony connection between the arm and axial skeleton. Most commonly fractured bone in the body.’ },
+‘r_clavicle_beige_0’:  { name: ‘Clavicle (Right)’, desc: ‘The collarbone. Only bony connection between the arm and axial skeleton. Most commonly fractured bone in the body.’ },
+‘l_scapula_beige_0’:   { name: ‘Scapula (Left)’, desc: ‘The shoulder blade. Connects the humerus to the clavicle. The glenoid cavity forms the shoulder socket.’ },
+‘r_scapula_beige_0’:   { name: ‘Scapula (Right)’, desc: ‘The shoulder blade. Connects the humerus to the clavicle. The glenoid cavity forms the shoulder socket.’ },
+// ARMS
+‘l_humerus_beige_0’:  { name: ‘Humerus (Left)’, desc: ‘Upper arm bone. The greater and lesser tubercles attach the rotator cuff muscles. The anatomical neck separates the head from the tubercles.’ },
+‘r_humerus_beige_0’:  { name: ‘Humerus (Right)’, desc: ‘Upper arm bone. Greater and lesser tubercles attach the rotator cuff muscles. The anatomical neck separates the head from the tubercles.’ },
+‘l_radius_beige_0’:   { name: ‘Radius (Left)’, desc: ‘Lateral forearm bone. Rotates around the ulna to pronate and supinate the hand. Distal end is the most common fracture site (Colles fracture).’ },
+‘r_radius_beige_0’:   { name: ‘Radius (Right)’, desc: ‘Lateral forearm bone. Rotates around the ulna to pronate and supinate the hand. Distal end is the most common fracture site (Colles fracture).’ },
+‘l_ulna_beige_0’:     { name: ‘Ulna (Left)’, desc: ‘Medial forearm bone. The olecranon process forms the elbow point. Forms the stable hinge of the elbow joint.’ },
+‘r_ulna_beige_0’:     { name: ‘Ulna (Right)’, desc: ‘Medial forearm bone. The olecranon process forms the elbow point. Forms the stable hinge of the elbow joint.’ },
+// WRIST CARPALS
+‘l_scaphoid_beige_0’:   { name: ‘Scaphoid (Left)’, desc: ‘Most commonly fractured carpal bone. Injury often missed on initial X-ray. Poor blood supply risks avascular necrosis.’ },
+‘r_scaphoid_beige_0’:   { name: ‘Scaphoid (Right)’, desc: ‘Most commonly fractured carpal bone. Injury often missed on initial X-ray. Poor blood supply risks avascular necrosis.’ },
+‘l_lunate_beige_0’:     { name: ‘Lunate (Left)’, desc: ‘Moon-shaped carpal bone. Most commonly dislocated carpal bone. Can compress the median nerve.’ },
+‘r_lunate_beige_0’:     { name: ‘Lunate (Right)’, desc: ‘Moon-shaped carpal bone. Most commonly dislocated carpal bone. Can compress the median nerve.’ },
+‘l_triquetral_beige_0’: { name: ‘Triquetral (Left)’, desc: ‘Three-sided carpal bone on the ulnar side of the wrist.’ },
+‘r_triquetral_beige_0’: { name: ‘Triquetral (Right)’, desc: ‘Three-sided carpal bone on the ulnar side of the wrist.’ },
+‘l_pisiform_beige_0’:   { name: ‘Pisiform (Left)’, desc: ‘Pea-shaped sesamoid bone. Smallest carpal bone. Sits on the triquetral.’ },
+‘r_pisiform_beige_0’:   { name: ‘Pisiform (Right)’, desc: ‘Pea-shaped sesamoid bone. Smallest carpal bone. Sits on the triquetral.’ },
+‘l_trapezium_beige_0’:  { name: ‘Trapezium (Left)’, desc: ‘Carpal bone at the base of the thumb. Forms the saddle joint of the thumb.’ },
+‘r_trapezium_beige_0’:  { name: ‘Trapezium (Right)’, desc: ‘Carpal bone at the base of the thumb. Forms the saddle joint of the thumb.’ },
+‘l_trapezoid_beige_0’:  { name: ‘Trapezoid (Left)’, desc: ‘Smallest bone in the distal carpal row.’ },
+‘r_trapezoid_beige_0’:  { name: ‘Trapezoid (Right)’, desc: ‘Smallest bone in the distal carpal row.’ },
+‘l_capitate_beige_0’:   { name: ‘Capitate (Left)’, desc: ‘Largest carpal bone. Central position in the wrist.’ },
+‘r_capitate_beige_0’:   { name: ‘Capitate (Right)’, desc: ‘Largest carpal bone. Central position in the wrist.’ },
+‘l_hamate_beige_0’:     { name: ‘Hamate (Left)’, desc: ‘Hook-shaped carpal bone. The hook of hamate can fracture in racquet sports.’ },
+‘r_hamate_beige_0’:     { name: ‘Hamate (Right)’, desc: ‘Hook-shaped carpal bone. The hook of hamate can fracture in racquet sports.’ },
+// PELVIS
+‘l_oscoxa_beige_0’:    { name: ‘Os Coxa (Left)’, desc: ‘The hip bone. Formed by fusion of ilium, ischium, and pubis. The acetabulum (hip socket) is where these three bones meet.’ },
+‘r_oscoxa_beige_0’:    { name: ‘Os Coxa (Right)’, desc: ‘The hip bone. Formed by fusion of ilium, ischium, and pubis. The acetabulum (hip socket) is where these three bones meet.’ },
+// LEGS
+‘l_femur_beige_0’:    { name: ‘Femur (Left)’, desc: ‘Thigh bone. Longest and strongest bone in the body. The femoral neck is a common fracture site in osteoporotic elderly patients.’ },
+‘r_femur_beige_0’:    { name: ‘Femur (Right)’, desc: ‘Thigh bone. Longest and strongest bone in the body. The femoral neck is a common fracture site in osteoporotic elderly patients.’ },
+‘l_patella_beige_0’:  { name: ‘Patella (Left)’, desc: ‘Kneecap. Largest sesamoid bone in the body. Improves the mechanical leverage of the quadriceps muscle.’ },
+‘r_patella_beige_0’:  { name: ‘Patella (Right)’, desc: ‘Kneecap. Largest sesamoid bone in the body. Improves the mechanical leverage of the quadriceps muscle.’ },
+‘l_tibia_beige_0’:    { name: ‘Tibia (Left)’, desc: ‘Shin bone. Main weight-bearing bone of the lower leg. The medial malleolus forms the inner ankle bump.’ },
+‘r_tibia_beige_0’:    { name: ‘Tibia (Right)’, desc: ‘Shin bone. Main weight-bearing bone of the lower leg. The medial malleolus forms the inner ankle bump.’ },
+‘l_fibula_beige_0’:   { name: ‘Fibula (Left)’, desc: ‘Slender lateral lower leg bone. Not weight-bearing. The lateral malleolus forms the outer ankle bump.’ },
+‘r_fibula_beige_0’:   { name: ‘Fibula (Right)’, desc: ‘Slender lateral lower leg bone. Not weight-bearing. The lateral malleolus forms the outer ankle bump.’ },
+// FOOT
+‘l talus_beige_0’:       { name: ‘Talus (Left)’, desc: ‘Ankle bone that connects the leg to the foot. Sits on the calcaneus.’ },
+‘r_talus_beige_0’:       { name: ‘Talus (Right)’, desc: ‘Ankle bone that connects the leg to the foot. Sits on the calcaneus.’ },
+‘l calcaneus_beige_0’:   { name: ‘Calcaneus (Left)’, desc: ‘Heel bone. Largest tarsal bone. The Achilles tendon attaches to its posterior surface.’ },
+‘r_calcaneus_beige_0’:   { name: ‘Calcaneus (Right)’, desc: ‘Heel bone. Largest tarsal bone. The Achilles tendon attaches to its posterior surface.’ },
+‘l navicular_beige_0’:   { name: ‘Navicular (Left)’, desc: ‘Boat-shaped tarsal bone on the medial side of the foot.’ },
+‘r_navicular_beige_0’:   { name: ‘Navicular (Right)’, desc: ‘Boat-shaped tarsal bone on the medial side of the foot.’ },
+‘l cuboid_beige_0’:      { name: ‘Cuboid (Left)’, desc: ‘Cube-shaped tarsal bone on the lateral side of the foot.’ },
+‘r_cuboid_beige_0’:      { name: ‘Cuboid (Right)’, desc: ‘Cube-shaped tarsal bone on the lateral side of the foot.’ },
+};
 
-function SkeletonModel({ activeLabel, setActiveLabel }) {
-  const { scene } = useGLTF('/models/Human_male_skeleton.glb');
-  const groupRef = useRef();
+// Color for highlighted bone
+const HIGHLIGHT_COLOR = ‘#00ffcc’;
+const NORMAL_COLOR = ‘#c8b89a’;
+const HOVER_COLOR = ‘#e8d4b0’;
 
-  useFrame((_, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.12;
-    }
-  });
+function SkeletonMesh({ nodes, activeBone, setActiveBone, hoveredBone, setHoveredBone }) {
+return (
+<Center>
+<group>
+{Object.entries(nodes).map(([nodeName, node]) => {
+if (!node.geometry) return null;
+const info = BONE_INFO[nodeName];
+const isActive = activeBone === nodeName;
+const isHovered = hoveredBone === nodeName;
+const isClickable = !!info;
 
-  return (
-    <Center>
-      <group ref={groupRef}>
-        <primitive object={scene} />
-
-        {BONE_LABELS.map((bone) => (
-          <mesh
-            key={bone.id}
-            position={bone.position}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setActiveLabel(activeLabel === bone.id ? null : bone.id);
-            }}
-          >
-            <sphereGeometry args={[0.18, 14, 14]} />
-            <meshStandardMaterial
-              color={activeLabel === bone.id ? '#00ffcc' : '#ffffff'}
-              emissive={activeLabel === bone.id ? '#00ffcc' : '#88aaff'}
-              emissiveIntensity={activeLabel === bone.id ? 1.5 : 0.6}
-              transparent
-              opacity={activeLabel === bone.id ? 1.0 : 0.7}
-            />
-
-            {activeLabel === bone.id && (
-              <Html distanceFactor={22} center style={{ pointerEvents: 'none' }}>
-                <div style={{
-                  background: 'rgba(2, 8, 23, 0.95)',
-                  border: '1px solid #00ffcc',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  color: '#fff',
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '13px',
-                  width: '210px',
-                  pointerEvents: 'none',
-                  boxShadow: '0 0 24px rgba(0,255,204,0.25)',
-                  userSelect: 'none',
-                }}>
-                  <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 6, fontSize: '14px' }}>
-                    {bone.name}
-                  </div>
-                  <div style={{ color: '#94a3b8', lineHeight: 1.6, fontSize: '12px' }}>
-                    {bone.desc}
-                  </div>
+```
+      return (
+        <mesh
+          key={nodeName}
+          geometry={node.geometry}
+          onPointerDown={(e) => {
+            if (!isClickable) return;
+            e.stopPropagation();
+            setActiveBone(activeBone === nodeName ? null : nodeName);
+          }}
+          onPointerEnter={(e) => {
+            if (!isClickable) return;
+            e.stopPropagation();
+            setHoveredBone(nodeName);
+            document.body.style.cursor = 'pointer';
+          }}
+          onPointerLeave={() => {
+            setHoveredBone(null);
+            document.body.style.cursor = 'grab';
+          }}
+        >
+          <meshStandardMaterial
+            color={isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : NORMAL_COLOR}
+            emissive={isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : '#000000'}
+            emissiveIntensity={isActive ? 0.4 : isHovered ? 0.15 : 0}
+            roughness={0.6}
+            metalness={0.1}
+          />
+          {isActive && info && (
+            <Html distanceFactor={180} center style={{ pointerEvents: 'none' }}>
+              <div style={{
+                background: 'rgba(2, 8, 23, 0.95)',
+                border: '1px solid #00ffcc',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                color: '#fff',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '13px',
+                width: '220px',
+                pointerEvents: 'none',
+                boxShadow: '0 0 24px rgba(0,255,204,0.3)',
+                userSelect: 'none',
+              }}>
+                <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 6, fontSize: '14px' }}>
+                  {info.name}
                 </div>
-              </Html>
-            )}
-          </mesh>
-        ))}
-      </group>
-    </Center>
-  );
+                <div style={{ color: '#94a3b8', lineHeight: 1.6, fontSize: '12px' }}>
+                  {info.desc}
+                </div>
+              </div>
+            </Html>
+          )}
+        </mesh>
+      );
+    })}
+  </group>
+</Center>
+```
+
+);
 }
 
 export default function SkeletonScene() {
-  const [activeLabel, setActiveLabel] = useState(null);
-  const containerRef = useRef(null);
+const { nodes } = useGLTF(’/models/scene.gltf’);
+const [activeBone, setActiveBone] = useState(null);
+const [hoveredBone, setHoveredBone] = useState(null);
+const containerRef = useRef(null);
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const prevent = (e) => e.preventDefault();
-    el.addEventListener('selectstart', prevent);
-    return () => el.removeEventListener('selectstart', prevent);
-  }, []);
+useEffect(() => {
+const el = containerRef.current;
+if (!el) return;
+const prevent = (e) => e.preventDefault();
+el.addEventListener(‘selectstart’, prevent);
+return () => {
+el.removeEventListener(‘selectstart’, prevent);
+document.body.style.cursor = ‘’;
+};
+}, []);
 
-  return (
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height: '500px',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        touchAction: 'none',
-        WebkitTapHighlightColor: 'transparent',
-        userSelect: 'none',
-        WebkitUserSelect: 'none',
-        MozUserSelect: 'none',
-        msUserSelect: 'none',
-        cursor: 'grab',
-      }}
-    >
-      <Canvas
-        camera={{ position: [0, -2, 40], fov: 80 }}
-        onPointerMissed={() => setActiveLabel(null)}
-        gl={{ antialias: true, alpha: true }}
-        style={{ background: 'transparent' }}
-      >
-        <ambientLight intensity={0.9} />
-        <directionalLight position={[4, 6, 4]} intensity={1.3} />
-        <directionalLight position={[-4, 2, -2]} intensity={0.4} color="#6688ff" />
-        <pointLight position={[0, 10, 5]} intensity={0.6} color="#ffffff" />
+const handleMissed = useCallback(() => setActiveBone(null), []);
 
-        <Bounds fit clip observe margin={0.75}>
-          <SkeletonModel activeLabel={activeLabel} setActiveLabel={setActiveLabel} />
-        </Bounds>
+return (
+<div
+ref={containerRef}
+style={{
+width: ‘100%’,
+height: ‘500px’,
+borderRadius: ‘16px’,
+overflow: ‘hidden’,
+touchAction: ‘none’,
+WebkitTapHighlightColor: ‘transparent’,
+userSelect: ‘none’,
+WebkitUserSelect: ‘none’,
+MozUserSelect: ‘none’,
+msUserSelect: ‘none’,
+cursor: ‘grab’,
+}}
+>
+<Canvas
+camera={{ position: [0, 0, 300], fov: 45 }}
+onPointerMissed={handleMissed}
+gl={{ antialias: true, alpha: true }}
+style={{ background: ‘transparent’ }}
+>
+<ambientLight intensity={1.0} />
+<directionalLight position={[100, 200, 100]} intensity={1.4} />
+<directionalLight position={[-100, 50, -100]} intensity={0.5} color=”#aaccff” />
+<pointLight position={[0, 200, 100]} intensity={0.6} />
 
-        <OrbitControls
-          enablePan={false}
-          enableZoom={true}
-          enableDamping={true}
-          dampingFactor={0.06}
-          zoomSpeed={0.8}
-          rotateSpeed={0.6}
-          zoomToCursor={true}
-          minDistance={5}
-          maxDistance={35}
-          minPolarAngle={Math.PI * 0.05}
-          maxPolarAngle={Math.PI * 0.95}
-        />
-      </Canvas>
-    </div>
-  );
+```
+    <Bounds fit clip observe margin={1.1}>
+      <SkeletonMesh
+        nodes={nodes}
+        activeBone={activeBone}
+        setActiveBone={setActiveBone}
+        hoveredBone={hoveredBone}
+        setHoveredBone={setHoveredBone}
+      />
+    </Bounds>
+
+    <OrbitControls
+      enablePan={true}
+      enableZoom={true}
+      enableDamping={true}
+      dampingFactor={0.06}
+      zoomSpeed={0.8}
+      rotateSpeed={0.6}
+      zoomToCursor={true}
+      minDistance={50}
+      maxDistance={600}
+    />
+  </Canvas>
+</div>
+```
+
+);
 }
