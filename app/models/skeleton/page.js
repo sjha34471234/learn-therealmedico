@@ -1,3 +1,12 @@
+// ============================================================
+// FILE: components/SkeletonScene.jsx
+// PURPOSE: Interactive 3D skeleton - click actual bones to label them
+// LAST CHANGED: May 15, 2026
+// WHY IT EXISTS: Model page for /models/skeleton
+// DO NOT CHANGE: Must stay a client component. Never import at top level.
+//                Always use next/dynamic with ssr:false
+// ============================================================
+
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
@@ -271,5 +280,5 @@ export default function SkeletonScene() {
   );
 }
 
-// Preloading the GLTF model so it doesn't stutter on load
-useGLTF.preload('/models/scene.gltf');
+// Remove this line entirely: 
+// useGLTF.preload('/models/scene.gltf');
