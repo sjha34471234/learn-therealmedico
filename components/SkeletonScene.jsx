@@ -127,6 +127,7 @@ function SkeletonModel({ activeBone, setActiveBone, hoveredBone, setHoveredBone 
   return (
     <primitive
       object={scene}
+      scale={0.01}
       onPointerDown={(e) => {
         const name = e.object.name;
         if (!BONE_INFO[name]) return;
@@ -247,7 +248,7 @@ export default function SkeletonScene() {
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 300], fov: 45 }}
+        camera={{ position: [0, 0, 3], fov: 45 }}
         onPointerMissed={handleMissed}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}
