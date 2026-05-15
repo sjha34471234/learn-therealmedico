@@ -1,17 +1,18 @@
 // ============================================================
 // FILE: components/SkeletonScene.jsx
 // PURPOSE: Interactive 3D skeleton - click actual bones to label them
-// LAST CHANGED: May 15, 2026
+// LAST CHANGED: May 16, 2026
 // WHY IT EXISTS: Model page for /models/skeleton
 // DO NOT CHANGE: Must stay a client component. Never import at top level.
 //                Always use next/dynamic with ssr:false
+//                useGLTF MUST stay inside SkeletonModel (inside Canvas). Never move it up.
 // ============================================================
 
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Html, Center, Bounds } from '@react-three/drei';
+import { useGLTF, OrbitControls, Html } from '@react-three/drei';
 
 const BONE_INFO = {
   'Cranium_beige_0':           { name: 'Cranium', desc: '8 fused bones protecting the brain. Includes frontal, parietal, temporal, occipital, sphenoid, and ethmoid bones.' },
@@ -119,78 +120,98 @@ const HIGHLIGHT_COLOR = '#00ffcc';
 const NORMAL_COLOR = '#c8b89a';
 const HOVER_COLOR = '#e8d4b0';
 
-function SkeletonMesh({ nodes, activeBone, setActiveBone, hoveredBone, setHoveredBone }) {
-  return (
-    <Center>
-      <group>
-        {Object.entries(nodes).map(([nodeName, node]) => {
-          if (!node.geometry) return null;
-          const info = BONE_INFO[nodeName];
-          const isActive = activeBone === nodeName;
-          const isHovered = hoveredBone === nodeName;
-          const isClickable = !!info;
+// This component lives INSIDE Canvas — safe to call useGLTF here
+function SkeletonModel({ activeBone, setActiveBone, hoveredBone, setHoveredBone }) {
+  const { scene } = useGLTF('/models/scene.gltf');
 
-          return (
-            <mesh
-              key={nodeName}
-              geometry={node.geometry}
-              onPointerDown={(e) => {
-                if (!isClickable) return;
-                e.stopPropagation();
-                setActiveBone(activeBone === nodeName ? null : nodeName);
-              }}
-              onPointerEnter={(e) => {
-                if (!isClickable) return;
-                e.stopPropagation();
-                setHoveredBone(nodeName);
-                document.body.style.cursor = 'pointer';
-              }}
-              onPointerLeave={() => {
-                setHoveredBone(null);
-                document.body.style.cursor = 'grab';
-              }}
-            >
-              <meshStandardMaterial
-                color={isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : NORMAL_COLOR}
-                emissive={isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : '#000000'}
-                emissiveIntensity={isActive ? 0.4 : isHovered ? 0.15 : 0}
-                roughness={0.6}
-                metalness={0.1}
-              />
-              {isActive && info && (
-                <Html distanceFactor={180} center style={{ pointerEvents: 'none' }}>
-                  <div style={{
-                    background: 'rgba(2, 8, 23, 0.95)',
-                    border: '1px solid #00ffcc',
-                    borderRadius: '12px',
-                    padding: '12px 16px',
-                    color: '#fff',
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '13px',
-                    width: '220px',
-                    pointerEvents: 'none',
-                    boxShadow: '0 0 24px rgba(0,255,204,0.3)',
-                    userSelect: 'none',
-                  }}>
-                    <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 6, fontSize: '14px' }}>
-                      {info.name}
-                    </div>
-                    <div style={{ color: '#94a3b8', lineHeight: 1.6, fontSize: '12px' }}>
-                      {info.desc}
-                    </div>
-                  </div>
-                </Html>
-              )}
-            </mesh>
-          );
-        })}
-      </group>
-    </Center>
+  return (
+    <primitive
+      object={scene}
+      onPointerDown={(e) => {
+        const name = e.object.name;
+        if (!BONE_INFO[name]) return;
+        e.stopPropagation();
+        setActiveBone(activeBone === name ? null : name);
+      }}
+      onPointerEnter={(e) => {
+        const name = e.object.name;
+        if (!BONE_INFO[name]) return;
+        e.stopPropagation();
+        setHoveredBone(name);
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerLeave={() => {
+        setHoveredBone(null);
+        document.body.style.cursor = 'grab';
+      }}
+    />
+  );
+}
+
+// Separate component to apply highlight colors — reads scene after load
+function BoneHighlighter({ activeBone, hoveredBone }) {
+  const { scene } = useGLTF('/models/scene.gltf');
+
+  useEffect(() => {
+    scene.traverse((obj) => {
+      if (!obj.isMesh) return;
+      const name = obj.name;
+      const isActive = activeBone === name;
+      const isHovered = hoveredBone === name;
+      if (obj.material) {
+        obj.material = obj.material.clone();
+        obj.material.color.set(isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : NORMAL_COLOR);
+        obj.material.emissive.set(isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : '#000000');
+        obj.material.emissiveIntensity = isActive ? 0.4 : isHovered ? 0.15 : 0;
+        obj.material.roughness = 0.6;
+        obj.material.metalness = 0.1;
+      }
+    });
+  }, [activeBone, hoveredBone, scene]);
+
+  return null;
+}
+
+// Label popup — shown as HTML overlay when a bone is active
+function BoneLabel({ activeBone }) {
+  const { scene } = useGLTF('/models/scene.gltf');
+
+  if (!activeBone || !BONE_INFO[activeBone]) return null;
+
+  let targetObj = null;
+  scene.traverse((obj) => {
+    if (obj.name === activeBone) targetObj = obj;
+  });
+
+  if (!targetObj) return null;
+
+  return (
+    <Html object={targetObj} center distanceFactor={180} style={{ pointerEvents: 'none' }}>
+      <div style={{
+        background: 'rgba(2, 8, 23, 0.95)',
+        border: '1px solid #00ffcc',
+        borderRadius: '12px',
+        padding: '12px 16px',
+        color: '#fff',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '13px',
+        width: '220px',
+        pointerEvents: 'none',
+        boxShadow: '0 0 24px rgba(0,255,204,0.3)',
+        userSelect: 'none',
+      }}>
+        <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 6, fontSize: '14px' }}>
+          {BONE_INFO[activeBone].name}
+        </div>
+        <div style={{ color: '#94a3b8', lineHeight: 1.6, fontSize: '12px' }}>
+          {BONE_INFO[activeBone].desc}
+        </div>
+      </div>
+    </Html>
   );
 }
 
 export default function SkeletonScene() {
-  const { nodes } = useGLTF('/models/scene.gltf');
   const [activeBone, setActiveBone] = useState(null);
   const [hoveredBone, setHoveredBone] = useState(null);
   const containerRef = useRef(null);
@@ -236,15 +257,14 @@ export default function SkeletonScene() {
         <directionalLight position={[-100, 50, -100]} intensity={0.5} color="#aaccff" />
         <pointLight position={[0, 200, 100]} intensity={0.6} />
 
-        <Bounds fit clip observe margin={1.1}>
-          <SkeletonMesh
-            nodes={nodes}
-            activeBone={activeBone}
-            setActiveBone={setActiveBone}
-            hoveredBone={hoveredBone}
-            setHoveredBone={setHoveredBone}
-          />
-        </Bounds>
+        <SkeletonModel
+          activeBone={activeBone}
+          setActiveBone={setActiveBone}
+          hoveredBone={hoveredBone}
+          setHoveredBone={setHoveredBone}
+        />
+        <BoneHighlighter activeBone={activeBone} hoveredBone={hoveredBone} />
+        <BoneLabel activeBone={activeBone} />
 
         <OrbitControls
           enablePan={true}
