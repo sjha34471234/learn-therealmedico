@@ -8,6 +8,7 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
@@ -21,6 +22,17 @@ const SkeletonScene = dynamic(() => import('../../../components/SkeletonScene'),
 });
 
 export default function SkeletonPage() {
+
+  // Fix scroll lock left over from landing page
+  useEffect(() => {
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, []);
+
   return (
     <div style={{
       background: '#050510',
