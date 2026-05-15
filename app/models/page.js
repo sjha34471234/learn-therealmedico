@@ -1,14 +1,14 @@
 // ============================================================
 // FILE: app/models/page.js
 // PURPOSE: 3D model catalogue — browse, search and filter all models
-// LAST CHANGED: May 13, 2026
+// LAST CHANGED: May 15, 2026
 // WHY IT EXISTS: Hub for all interactive 3D anatomy/medical models
 // ⚠️ DO NOT CHANGE: Model slugs must match their individual page routes
 // ============================================================
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 
@@ -28,6 +28,16 @@ export default function ModelsPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+
+  // Fix scroll lock left over from landing page
+  useEffect(() => {
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     return MODELS.filter(m => {
@@ -63,7 +73,7 @@ export default function ModelsPage() {
             fontFamily: 'Inter, sans-serif', padding: 0,
           }}
         >
-          ← Back to Learn World
+          Back to Learn World
         </button>
 
         {/* Header */}
