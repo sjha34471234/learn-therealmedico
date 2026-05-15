@@ -6,13 +6,14 @@
 // DO NOT CHANGE: Must stay a client component. Never import at top level.
 //                Always use next/dynamic with ssr:false
 //                useGLTF MUST stay inside SkeletonModel (inside Canvas). Never move it up.
+//                Bounds component handles all camera fitting — do not manually set scale or camera z.
 // ============================================================
 
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Html } from '@react-three/drei';
+import { useGLTF, OrbitControls, Html, Bounds, useBounds } from '@react-three/drei';
 
 const BONE_INFO = {
   'Cranium_beige_0':           { name: 'Cranium', desc: '8 fused bones protecting the brain. Includes frontal, parietal, temporal, occipital, sphenoid, and ethmoid bones.' },
@@ -120,6 +121,15 @@ const HIGHLIGHT_COLOR = '#00ffcc';
 const NORMAL_COLOR = '#c8b89a';
 const HOVER_COLOR = '#e8d4b0';
 
+// AutoFit — runs once after model loads to fit camera to model bounds
+function AutoFit() {
+  const bounds = useBounds();
+  useEffect(() => {
+    bounds.refresh().fit();
+  }, [bounds]);
+  return null;
+}
+
 // This component lives INSIDE Canvas — safe to call useGLTF here
 function SkeletonModel({ activeBone, setActiveBone, hoveredBone, setHoveredBone }) {
   const { scene } = useGLTF('/models/scene.gltf');
@@ -127,7 +137,6 @@ function SkeletonModel({ activeBone, setActiveBone, hoveredBone, setHoveredBone 
   return (
     <primitive
       object={scene}
-      scale={0.01}
       onPointerDown={(e) => {
         const name = e.object.name;
         if (!BONE_INFO[name]) return;
@@ -149,7 +158,6 @@ function SkeletonModel({ activeBone, setActiveBone, hoveredBone, setHoveredBone 
   );
 }
 
-// Separate component to apply highlight colors — reads scene after load
 function BoneHighlighter({ activeBone, hoveredBone }) {
   const { scene } = useGLTF('/models/scene.gltf');
 
@@ -173,7 +181,6 @@ function BoneHighlighter({ activeBone, hoveredBone }) {
   return null;
 }
 
-// Label popup — shown as HTML overlay when a bone is active
 function BoneLabel({ activeBone }) {
   const { scene } = useGLTF('/models/scene.gltf');
 
@@ -187,7 +194,7 @@ function BoneLabel({ activeBone }) {
   if (!targetObj) return null;
 
   return (
-    <Html object={targetObj} center distanceFactor={180} style={{ pointerEvents: 'none' }}>
+    <Html object={targetObj} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
       <div style={{
         background: 'rgba(2, 8, 23, 0.95)',
         border: '1px solid #00ffcc',
@@ -248,22 +255,26 @@ export default function SkeletonScene() {
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 3], fov: 45 }}
+        camera={{ position: [0, 0, 5], fov: 50 }}
         onPointerMissed={handleMissed}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}
       >
         <ambientLight intensity={1.0} />
-        <directionalLight position={[100, 200, 100]} intensity={1.4} />
-        <directionalLight position={[-100, 50, -100]} intensity={0.5} color="#aaccff" />
-        <pointLight position={[0, 200, 100]} intensity={0.6} />
+        <directionalLight position={[10, 20, 10]} intensity={1.4} />
+        <directionalLight position={[-10, 5, -10]} intensity={0.5} color="#aaccff" />
+        <pointLight position={[0, 20, 10]} intensity={0.6} />
 
-        <SkeletonModel
-          activeBone={activeBone}
-          setActiveBone={setActiveBone}
-          hoveredBone={hoveredBone}
-          setHoveredBone={setHoveredBone}
-        />
+        <Bounds fit clip observe margin={1.2}>
+          <SkeletonModel
+            activeBone={activeBone}
+            setActiveBone={setActiveBone}
+            hoveredBone={hoveredBone}
+            setHoveredBone={setHoveredBone}
+          />
+          <AutoFit />
+        </Bounds>
+
         <BoneHighlighter activeBone={activeBone} hoveredBone={hoveredBone} />
         <BoneLabel activeBone={activeBone} />
 
@@ -275,8 +286,6 @@ export default function SkeletonScene() {
           zoomSpeed={0.8}
           rotateSpeed={0.6}
           zoomToCursor={true}
-          minDistance={0.5}
-          maxDistance={10}
         />
       </Canvas>
     </div>
