@@ -275,8 +275,8 @@ export default function SkeletonScene() {
           zoomSpeed={0.8}
           rotateSpeed={0.6}
           zoomToCursor={true}
-          minDistance={50}
-          maxDistance={600}
+          minDistance={0.5}
+          maxDistance={10}
         />
       </Canvas>
     </div>
