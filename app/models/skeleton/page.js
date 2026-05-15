@@ -71,7 +71,7 @@ export default function SkeletonPage() {
       </div>
 
       {/* 3D Scene */}
-      <div style={{ flex: 1, minHeight: '60vh', padding: '16px' }}>
+      <div style={{ height: '520px', padding: '16px 16px 0' }}>
         <SkeletonScene />
       </div>
 
