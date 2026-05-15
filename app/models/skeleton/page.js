@@ -55,29 +55,29 @@ export default function SkeletonPage() {
       </div>
 
       {/* Title */}
-      <div style={{ padding: '24px 24px 0' }}>
+      <div style={{ padding: '20px 24px 0' }}>
         <h1 style={{
           fontFamily: 'Merriweather, serif',
           fontWeight: 900,
-          fontSize: 'clamp(24px, 5vw, 42px)',
+          fontSize: 'clamp(22px, 5vw, 38px)',
           margin: 0,
           lineHeight: 1.15,
         }}>
           Male Skeleton
         </h1>
-        <p style={{ color: '#888', fontSize: '14px', marginTop: '8px', marginBottom: 0 }}>
+        <p style={{ color: '#888', fontSize: '14px', marginTop: '6px', marginBottom: 0 }}>
           206 bones · Tap the glowing dots to explore
         </p>
       </div>
 
       {/* 3D Scene */}
-      <div style={{ height: '520px', padding: '16px 16px 0' }}>
+      <div style={{ height: '520px', padding: '12px 16px 0' }}>
         <SkeletonScene />
       </div>
 
       {/* Info panel */}
       <div style={{
-        padding: '20px 24px 40px',
+        padding: '16px 24px 40px',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
         gap: '12px',
