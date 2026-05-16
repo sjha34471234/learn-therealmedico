@@ -232,8 +232,7 @@ function BoneLabel({ activeBone }) {
   );
 }
 
-export default function SkeletonScene() {
-  const [activeBone, setActiveBone] = useState(null);
+export default function SkeletonScene({ activeBone, setActiveBone }) {
   const [hoveredBone, setHoveredBone] = useState(null);
   const [canvasHeight, setCanvasHeight] = useState(420);
   const containerRef = useRef(null);
