@@ -218,7 +218,7 @@ function BoneLabel({ activeBone }) {
         pointerEvents: 'none',
         boxShadow: '0 0 10px rgba(0,255,204,0.2)',
         userSelect: 'none',
-        transform: 'scale(0.55)',
+        transform: 'scale(0.65)',
         transformOrigin: 'center center',
       }}>
         <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 3, fontSize: '13px', letterSpacing: '0.02em' }}>
