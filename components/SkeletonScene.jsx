@@ -173,25 +173,37 @@ function SkeletonModel({ activeBone, setActiveBone, hoveredBone, setHoveredBone 
 function BoneHighlighter({ activeBone, hoveredBone }) {
   const { scene } = useGLTF('/models/scene.gltf');
 
+  // Clone all materials once on load so we never clone mid-render
   useEffect(() => {
     scene.traverse((obj) => {
-      if (!obj.isMesh) return;
-      const name = obj.name;
-      const isActive = activeBone === name;
-      const isHovered = hoveredBone === name;
-      if (obj.material) {
-        obj.material = obj.material.clone();
-        obj.material.color.set(isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : NORMAL_COLOR);
-        obj.material.emissive.set(isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : '#000000');
-        obj.material.emissiveIntensity = isActive ? 0.4 : isHovered ? 0.15 : 0;
-        obj.material.roughness = 0.6;
-        obj.material.metalness = 0.1;
-      }
+      if (!obj.isMesh || !obj.material) return;
+      obj.material = obj.material.clone();
+      obj.material.roughness = 0.6;
+      obj.material.metalness = 0.1;
     });
+  }, [scene]);
+
+  // Only update the two bones that changed — not all 183
+  const prevActive = useRef(null);
+  const prevHovered = useRef(null);
+
+  useEffect(() => {
+    const toUpdate = new Set([activeBone, prevActive.current, hoveredBone, prevHovered.current]);
+    scene.traverse((obj) => {
+      if (!obj.isMesh || !obj.material || !toUpdate.has(obj.name)) return;
+      const isActive = activeBone === obj.name;
+      const isHovered = hoveredBone === obj.name;
+      obj.material.color.set(isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : NORMAL_COLOR);
+      obj.material.emissive.set(isActive ? HIGHLIGHT_COLOR : isHovered ? HOVER_COLOR : '#000000');
+      obj.material.emissiveIntensity = isActive ? 0.4 : isHovered ? 0.15 : 0;
+    });
+    prevActive.current = activeBone;
+    prevHovered.current = hoveredBone;
   }, [activeBone, hoveredBone, scene]);
 
   return null;
 }
+
 
 function BoneLabel({ activeBone }) {
   const { scene } = useGLTF('/models/scene.gltf');
