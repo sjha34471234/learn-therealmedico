@@ -205,8 +205,8 @@ function BoneLabel({ activeBone }) {
 
   if (!targetObj) return null;
 
-  return (
-    <Html object={targetObj} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+    return (
+    <Html object={targetObj} center style={{ pointerEvents: 'none' }}>
       <div style={{
         background: 'rgba(2, 8, 23, 0.92)',
         border: '1px solid #00ffcc',
@@ -214,15 +214,17 @@ function BoneLabel({ activeBone }) {
         padding: '5px 8px',
         color: '#fff',
         fontFamily: 'Inter, sans-serif',
-        width: '120px',
+        width: '130px',
         pointerEvents: 'none',
         boxShadow: '0 0 10px rgba(0,255,204,0.2)',
         userSelect: 'none',
+        transform: 'scale(0.55)',
+        transformOrigin: 'center center',
       }}>
-        <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 3, fontSize: '9px', letterSpacing: '0.02em' }}>
+        <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 3, fontSize: '13px', letterSpacing: '0.02em' }}>
           {BONE_INFO[activeBone].name}
         </div>
-        <div style={{ color: '#94a3b8', lineHeight: 1.4, fontSize: '8px' }}>
+        <div style={{ color: '#94a3b8', lineHeight: 1.4, fontSize: '11px' }}>
           {BONE_INFO[activeBone].desc}
         </div>
       </div>
