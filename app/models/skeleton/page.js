@@ -82,9 +82,13 @@ export default function SkeletonPage() {
   const [activeBone, setActiveBone] = useState(null);
   const sceneRef = useRef(null);
 
-  useEffect(() => {
+    useEffect(() => {
     document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
+    document.documentElement.style.overflow = '';
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
   }, []);
 
   function showBone(key) {
