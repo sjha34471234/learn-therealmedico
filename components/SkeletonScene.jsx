@@ -7,6 +7,7 @@
 //                Always use next/dynamic with ssr:false
 //                useGLTF MUST stay inside SkeletonModel (inside Canvas). Never move it up.
 //                Bounds component handles all camera fitting — do not manually set scale or camera z.
+//                Canvas height is responsive via useEffect reading window.innerWidth — do not hardcode px.
 // ============================================================
 
 'use client';
@@ -121,6 +122,16 @@ const HIGHLIGHT_COLOR = '#00ffcc';
 const NORMAL_COLOR = '#c8b89a';
 const HOVER_COLOR = '#e8d4b0';
 
+// Returns responsive canvas height based on window width
+function getCanvasHeight() {
+  if (typeof window === 'undefined') return 450;
+  const w = window.innerWidth;
+  if (w < 480) return 340;
+  if (w < 768) return 400;
+  if (w < 1024) return 460;
+  return 520;
+}
+
 // AutoFit — runs once after model loads to fit camera to model bounds
 function AutoFit() {
   const bounds = useBounds();
@@ -196,22 +207,21 @@ function BoneLabel({ activeBone }) {
   return (
     <Html object={targetObj} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
       <div style={{
-        background: 'rgba(2, 8, 23, 0.95)',
+        background: 'rgba(2, 8, 23, 0.92)',
         border: '1px solid #00ffcc',
-        borderRadius: '12px',
-        padding: '12px 16px',
+        borderRadius: '8px',
+        padding: '7px 10px',
         color: '#fff',
         fontFamily: 'Inter, sans-serif',
-        fontSize: '13px',
-        width: '220px',
+        width: '160px',
         pointerEvents: 'none',
-        boxShadow: '0 0 24px rgba(0,255,204,0.3)',
+        boxShadow: '0 0 14px rgba(0,255,204,0.25)',
         userSelect: 'none',
       }}>
-        <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 6, fontSize: '14px' }}>
+        <div style={{ color: '#00ffcc', fontWeight: 700, marginBottom: 4, fontSize: '11px', letterSpacing: '0.02em' }}>
           {BONE_INFO[activeBone].name}
         </div>
-        <div style={{ color: '#94a3b8', lineHeight: 1.6, fontSize: '12px' }}>
+        <div style={{ color: '#94a3b8', lineHeight: 1.5, fontSize: '10px' }}>
           {BONE_INFO[activeBone].desc}
         </div>
       </div>
@@ -222,7 +232,18 @@ function BoneLabel({ activeBone }) {
 export default function SkeletonScene() {
   const [activeBone, setActiveBone] = useState(null);
   const [hoveredBone, setHoveredBone] = useState(null);
+  const [canvasHeight, setCanvasHeight] = useState(450);
   const containerRef = useRef(null);
+
+  // Responsive canvas height
+  useEffect(() => {
+    function updateHeight() {
+      setCanvasHeight(getCanvasHeight());
+    }
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -242,7 +263,7 @@ export default function SkeletonScene() {
       ref={containerRef}
       style={{
         width: '100%',
-        height: '500px',
+        height: `${canvasHeight}px`,
         borderRadius: '16px',
         overflow: 'hidden',
         touchAction: 'none',
