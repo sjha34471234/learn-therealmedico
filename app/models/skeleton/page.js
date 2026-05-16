@@ -1,26 +1,34 @@
 // ============================================================
 // FILE: app/models/skeleton/page.js
 // PURPOSE: Individual model page for the male skeleton
-// LAST CHANGED: May 15, 2026
+// LAST CHANGED: May 16, 2026
 // WHY IT EXISTS: Routed from /models catalogue - slug: skeleton
 // DO NOT CHANGE: SkeletonScene must stay inside dynamic() with ssr:false
+//                Do NOT put a fixed height on the 3D scene wrapper div.
+//                SkeletonScene controls its own responsive height internally.
 // ============================================================
 
 'use client';
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 const SkeletonScene = dynamic(() => import('../../../components/SkeletonScene'), {
   ssr: false,
   loading: () => (
-    <div style={{ color: '#fff', textAlign: 'center', paddingTop: '200px', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ color: '#fff', textAlign: 'center', paddingTop: '160px', fontFamily: 'Inter, sans-serif' }}>
       Loading skeleton...
     </div>
   ),
 });
 
 export default function SkeletonPage() {
+  useEffect(() => {
+    document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   return (
     <div style={{
       background: '#050510',
@@ -70,8 +78,8 @@ export default function SkeletonPage() {
         </p>
       </div>
 
-      {/* 3D Scene */}
-      <div style={{ height: '520px', padding: '16px 16px 0' }}>
+      {/* 3D Scene — no fixed height here, SkeletonScene controls its own height */}
+      <div style={{ padding: '16px 16px 0' }}>
         <SkeletonScene />
       </div>
 
