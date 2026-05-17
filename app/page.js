@@ -77,7 +77,7 @@ export default function HomePage() {
 
       {/* Click anywhere overlay — sits above background, below DNA */}
       <div
-        onClick={() => router.push('/models')}
+        onClick={() => router.push('/learn')}
         style={{
           position: 'fixed', inset: 0, zIndex: 2,
           cursor: 'pointer', pointerEvents: 'auto',
