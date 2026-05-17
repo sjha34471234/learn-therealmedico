@@ -10,13 +10,15 @@
 //   - setActiveBone is called to highlight the bone in the 3D canvas during the game.
 //   - Timer uses useRef not useState — avoids re-render on every tick.
 //   - shuffle uses Fisher-Yates — do not replace with .sort(() => Math.random() - 0.5)
+//   - isMember defaults to false — Learn World authStore has no profile field yet.
+//     When profile fetch is added to authStore, update the isMember line here.
 // ============================================================
 
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { QUIZ_BONES } from '../lib/quizData';
-import { useAuthStore } from '../store/authStore';
+import useAuthStore from '../store/authStore';
 
 // Fisher-Yates shuffle — unbiased
 function shuffle(arr) {
@@ -40,8 +42,10 @@ const RED = '#f87171';
 const GOLD = '#fbbf24';
 
 export default function SkeletonQuiz({ setActiveBone, onClose }) {
-  const { profile } = useAuthStore();
-  const isMember = profile?.is_member === true;
+  const user = useAuthStore(state => state.user);
+  // isMember: always false until authStore gains a profile field with is_member.
+  // When that is added, replace this line with: const isMember = useAuthStore(state => state.profile?.is_member) === true;
+  const isMember = false;
 
   // Game phases: 'mode' | 'playing' | 'results'
   const [phase, setPhase] = useState('mode');
@@ -93,7 +97,6 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
     const newResults = [...results, result];
 
     if (currentIndex + 1 >= queue.length) {
-      // Game over
       setTotalMs(Date.now() - gameStartTime.current);
       setResults(newResults);
       setActiveBone(null);
@@ -166,7 +169,7 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
     return (
       <div style={overlayStyle}>
         <div style={panelStyle}>
-          <button onClick={onClose} style={closeBtnStyle}>✕</button>
+          <button onClick={onClose} style={closeBtnStyle}>X</button>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>🦴</div>
           <h2 style={headingStyle}>Skeleton Quiz</h2>
           <p style={subStyle}>{QUIZ_BONES.length} bones · Choose your mode</p>
@@ -200,7 +203,7 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
     return (
       <div style={overlayStyle}>
         <div style={{ ...panelStyle, maxWidth: '440px' }}>
-          <button onClick={onClose} style={closeBtnStyle}>✕</button>
+          <button onClick={onClose} style={closeBtnStyle}>X</button>
 
           {/* Progress bar */}
           <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', marginBottom: '20px', overflow: 'hidden' }}>
@@ -230,7 +233,7 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
           {/* Feedback flash */}
           {feedback && (
             <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 700, color: feedbackColor, marginBottom: '12px', fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em' }}>
-              {feedback === 'correct' ? '✓ Correct!' : feedback === 'wrong' ? `✗ It was ${currentBone?.name}` : 'Skipped'}
+              {feedback === 'correct' ? 'Correct!' : feedback === 'wrong' ? `It was ${currentBone?.name}` : 'Skipped'}
             </div>
           )}
 
@@ -290,7 +293,7 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
     return (
       <div style={{ ...overlayStyle, overflowY: 'auto', alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
         <div style={{ ...panelStyle, maxWidth: '480px', width: '100%' }}>
-          <button onClick={onClose} style={closeBtnStyle}>✕</button>
+          <button onClick={onClose} style={closeBtnStyle}>X</button>
 
           {/* Score hero */}
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -320,10 +323,9 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
           {isMember ? (
             <div style={{ marginBottom: '24px' }}>
               <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: GOLD, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>★</span> Real Medico+ Analysis
+                Real Medico+ Analysis
               </div>
 
-              {/* Weak regions */}
               {weakRegions.length > 0 && (
                 <div style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '10px', padding: '14px', marginBottom: '14px' }}>
                   <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', color: GOLD, marginBottom: '8px' }}>Weak areas to review</div>
@@ -335,17 +337,16 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
                 </div>
               )}
 
-              {/* Per-bone breakdown */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px', overflowY: 'auto' }}>
                 {results.map((r, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '10px 14px', border: `1px solid ${r.correct ? 'rgba(52,211,153,0.15)' : r.skipped ? 'rgba(255,255,255,0.06)' : 'rgba(248,113,113,0.15)'}` }}>
                     <div>
                       <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', color: r.correct ? GREEN : r.skipped ? 'rgba(255,255,255,0.35)' : RED }}>
-                        {r.correct ? '✓' : r.skipped ? '—' : '✗'} {r.bone.name}
+                        {r.correct ? 'Correct' : r.skipped ? 'Skipped' : 'Wrong'} — {r.bone.name}
                       </div>
                       {!r.correct && !r.skipped && r.answer && (
                         <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>
-                          You wrote: "{r.answer}"
+                          You wrote: {r.answer}
                         </div>
                       )}
                       {r.skipped && (
@@ -362,7 +363,6 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
               </div>
             </div>
           ) : (
-            /* NON-MEMBER GATE — data never rendered, not even hidden */
             <div style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '12px', padding: '24px', textAlign: 'center', marginBottom: '24px' }}>
               <div style={{ fontSize: '28px', marginBottom: '10px' }}>★</div>
               <div style={{ fontFamily: 'Merriweather, serif', fontWeight: 700, fontSize: '15px', color: '#fff', marginBottom: '8px' }}>
@@ -377,7 +377,7 @@ export default function SkeletonQuiz({ setActiveBone, onClose }) {
                 rel="noopener noreferrer"
                 style={{ display: 'inline-block', background: GOLD, color: '#111', fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: '13px', padding: '10px 22px', borderRadius: '8px', textDecoration: 'none', letterSpacing: '0.03em' }}
               >
-                Unlock with Real Medico+ →
+                Unlock with Real Medico+
               </a>
             </div>
           )}
@@ -508,4 +508,8 @@ const choiceBtnStyle = {
 // --- CHANGE LOG ---
 // [May 17, 2026] CREATED: Full skeleton quiz component — mode picker, game loop, gated results
 // REASON: Quiz Me feature — active recall study tool with Real Medico+ analysis gate
+// [May 17, 2026] FIXED: Changed named import to default import for useAuthStore
+// REASON: authStore exports default not named. Also removed profile dependency —
+//         Learn World authStore has no profile field. isMember defaults false until
+//         authStore is updated with profile fetch.
 // --- END CHANGE LOG ---
