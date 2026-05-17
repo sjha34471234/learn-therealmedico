@@ -101,13 +101,15 @@ export default function SkeletonPage() {
 
   return (
     <div style={{
-      background: '#050510',
-      minHeight: '100vh',
-      color: '#fff',
-      fontFamily: 'Inter, sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
+  background: '#050510',
+  minHeight: '100vh',
+  color: '#fff',
+  fontFamily: 'Inter, sans-serif',
+  display: 'flex',
+  flexDirection: 'column',
+  paddingTop: '84px',
+}}>
+
 
       {/* Quiz overlay */}
       {quizOpen && (
