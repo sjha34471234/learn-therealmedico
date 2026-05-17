@@ -1,12 +1,13 @@
 // ============================================================
 // FILE: app/models/skeleton/page.js
 // PURPOSE: Individual model page for the male skeleton
-// LAST CHANGED: May 16, 2026
+// LAST CHANGED: May 17, 2026
 // WHY IT EXISTS: Routed from /models catalogue - slug: skeleton
 // DO NOT CHANGE: SkeletonScene must stay inside dynamic() with ssr:false
 //                Do NOT put a fixed height on the 3D scene wrapper div.
 //                activeBone state lives HERE and is passed to SkeletonScene as prop.
 //                This allows bone cards below to trigger highlights in the 3D viewer.
+//                SkeletonQuiz also receives setActiveBone to highlight bones during quiz.
 // ============================================================
 
 'use client';
@@ -14,6 +15,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import SkeletonQuiz from '../../../components/SkeletonQuiz';
 
 const SkeletonScene = dynamic(() => import('../../../components/SkeletonScene'), {
   ssr: false,
@@ -80,9 +82,10 @@ const BONE_CATALOG = [
 
 export default function SkeletonPage() {
   const [activeBone, setActiveBone] = useState(null);
+  const [quizOpen, setQuizOpen] = useState(false);
   const sceneRef = useRef(null);
 
-    useEffect(() => {
+  useEffect(() => {
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
     return () => {
@@ -106,6 +109,17 @@ export default function SkeletonPage() {
       flexDirection: 'column',
     }}>
 
+      {/* Quiz overlay */}
+      {quizOpen && (
+        <SkeletonQuiz
+          setActiveBone={setActiveBone}
+          onClose={() => {
+            setQuizOpen(false);
+            setActiveBone(null);
+          }}
+        />
+      )}
+
       {/* Top bar */}
       <div style={{
         display: 'flex',
@@ -124,8 +138,27 @@ export default function SkeletonPage() {
         }}>
           Back to Models
         </Link>
-        <div style={{ fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-          Musculoskeletal
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Musculoskeletal
+          </div>
+          <button
+            onClick={() => setQuizOpen(true)}
+            style={{
+              background: 'rgba(79,195,247,0.12)',
+              border: '1px solid rgba(79,195,247,0.35)',
+              borderRadius: '8px',
+              padding: '7px 16px',
+              color: '#4fc3f7',
+              fontSize: '13px',
+              fontWeight: 700,
+              fontFamily: 'Inter, sans-serif',
+              cursor: 'pointer',
+              letterSpacing: '0.03em',
+            }}
+          >
+            Quiz Me
+          </button>
         </div>
       </div>
 
@@ -194,7 +227,6 @@ export default function SkeletonPage() {
 
         {BONE_CATALOG.map((section) => (
           <div key={section.region} style={{ marginBottom: '40px' }}>
-            {/* Region header */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -213,7 +245,6 @@ export default function SkeletonPage() {
               <div style={{ flex: 1, height: '1px', background: 'rgba(0,255,204,0.15)' }} />
             </div>
 
-            {/* Bone cards grid */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
@@ -229,7 +260,6 @@ export default function SkeletonPage() {
                     padding: '16px',
                     transition: 'border 0.2s, background 0.2s',
                   }}>
-                    {/* Bone name */}
                     <div style={{
                       fontWeight: 700,
                       fontSize: '15px',
@@ -240,7 +270,6 @@ export default function SkeletonPage() {
                       {bone.name}
                     </div>
 
-                    {/* Fun facts */}
                     <ul style={{ margin: 0, padding: '0 0 0 16px', listStyle: 'disc' }}>
                       {bone.facts.map((fact, i) => (
                         <li key={i} style={{
@@ -254,7 +283,6 @@ export default function SkeletonPage() {
                       ))}
                     </ul>
 
-                    {/* Show in model button */}
                     <button
                       onClick={() => showBone(isActive ? null : bone.key)}
                       style={{
@@ -284,3 +312,10 @@ export default function SkeletonPage() {
     </div>
   );
 }
+
+// --- CHANGE LOG ---
+// [May 16, 2026] CREATED: Male skeleton page with 3D viewer + bone reference cards
+// REASON: Routed from /models catalogue
+// [May 17, 2026] CHANGED: Added Quiz Me button + SkeletonQuiz overlay
+// REASON: Active recall quiz feature — Quiz Me button in top bar opens SkeletonQuiz
+// --- END CHANGE LOG ---
