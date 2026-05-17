@@ -1,16 +1,15 @@
 // ============================================================
 // FILE: app/learn/page.js
-// PURPOSE: Hub page — user chooses what to explore (3D Models, Lectures, etc.)
+// PURPOSE: Hub page — user chooses what type of content to explore
 // LAST CHANGED: May 17, 2026
-// WHY IT EXISTS: Previously landing page went straight to /models.
-//   /learn is a future-proof hub so new content types can be added
-//   without restructuring routes.
-// DEPENDENCIES: next/link
+// WHY IT EXISTS: Landing page previously went straight to /models.
+//   /learn is a future-proof entry point — new content types (lectures, quizzes)
+//   slot in here as cards without any route restructuring.
+// DEPENDENCIES: lib/scrollUtils.js, next/link
 // ⚠️ DO NOT CHANGE:
-//   - Scroll must be unlocked on mount — landing page locks it
-//   - 'use client' required for useEffect scroll unlock
-//   - Coming soon cards must NOT be links — they are not clickable
-//   - Add new content types here as cards when they are built
+//   - Must unlock scroll on mount — landing page locks it, bleeds in on navigation
+//   - Coming soon cards must NOT be wrapped in Link — they are not clickable
+//   - To add a new content type: add an object to CATEGORIES, set live: true when ready
 // ============================================================
 
 'use client';
@@ -28,7 +27,7 @@ const CATEGORIES = [
     href: '/models',
     live: true,
     color: '#4fc3f7',
-    glow: 'rgba(79,195,247,0.15)',
+    glow: 'rgba(79,195,247,0.14)',
   },
   {
     id: 'lectures',
@@ -54,7 +53,7 @@ const CATEGORIES = [
     id: 'cases',
     emoji: '🩺',
     title: 'Clinical Case Studies',
-    description: 'Work through real-world patient cases — history, examination, diagnosis, and nursing management.',
+    description: 'Work through real patient cases — history, examination, diagnosis, and nursing management.',
     href: null,
     live: false,
     color: '#fb923c',
@@ -63,146 +62,79 @@ const CATEGORIES = [
 ];
 
 export default function LearnHubPage() {
-  // Unlock scroll — landing page locks it and it bleeds in on navigation
   useEffect(() => {
     unlockScroll();
   }, []);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#080814',
-      paddingTop: '80px',
-      paddingBottom: '60px',
-    }}>
+    <div style={{ minHeight: '100vh', background: '#050510', paddingTop: '80px', paddingBottom: '64px' }}>
 
-      {/* Background glows */}
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        pointerEvents: 'none', zIndex: 0,
-        background: 'radial-gradient(ellipse at 20% 20%, rgba(79,195,247,0.06) 0%, transparent 55%), radial-gradient(ellipse at 80% 80%, rgba(167,139,250,0.05) 0%, transparent 55%)',
-      }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(ellipse at 20% 20%, rgba(79,195,247,0.05) 0%, transparent 55%), radial-gradient(ellipse at 80% 75%, rgba(167,139,250,0.04) 0%, transparent 55%)' }} />
 
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: '960px', margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: '900px', margin: '0 auto', padding: '0 24px' }}>
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <h1 style={{
-            fontFamily: 'Merriweather, serif',
-            fontWeight: 700,
-            fontSize: 'clamp(24px, 5vw, 36px)',
-            color: '#ffffff',
-            margin: '0 0 12px 0',
-            letterSpacing: '-0.01em',
-          }}>
+        <div style={{ textAlign: 'center', marginBottom: '52px' }}>
+          <h1 style={{ fontFamily: 'Merriweather, serif', fontWeight: 700, fontSize: 'clamp(22px, 5vw, 34px)', color: '#ffffff', margin: '0 0 10px 0', letterSpacing: '-0.01em' }}>
             What do you want to explore?
           </h1>
-          <p style={{
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '16px',
-            color: 'rgba(255,255,255,0.45)',
-            margin: 0,
-          }}>
-            Interactive medical education built for nursing and healthcare students
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+            Interactive medical education for nursing and healthcare students
           </p>
         </div>
 
-        {/* Category grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '20px',
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '18px' }}>
           {CATEGORIES.map((cat) => {
             const card = (
               <div
                 key={cat.id}
                 style={{
-                  background: cat.live
-                    ? `radial-gradient(ellipse at top left, ${cat.glow}, rgba(255,255,255,0.03))`
-                    : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${cat.live ? cat.color + '30' : 'rgba(255,255,255,0.07)'}`,
-                  borderRadius: '16px',
-                  padding: '28px 24px',
+                  background: cat.live ? 'radial-gradient(ellipse at top left, ' + cat.glow + ', rgba(255,255,255,0.025))' : 'rgba(255,255,255,0.018)',
+                  border: '1px solid ' + (cat.live ? cat.color + '28' : 'rgba(255,255,255,0.06)'),
+                  borderRadius: '14px',
+                  padding: '26px 22px',
                   position: 'relative',
-                  opacity: cat.live ? 1 : 0.55,
+                  opacity: cat.live ? 1 : 0.5,
                   cursor: cat.live ? 'pointer' : 'default',
                   transition: 'transform 0.2s, box-shadow 0.2s',
+                  height: '100%',
+                  boxSizing: 'border-box',
                 }}
                 onMouseEnter={(e) => {
-                  if (cat.live) {
-                    e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = `0 12px 40px ${cat.glow}`;
-                  }
+                  if (!cat.live) return;
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 10px 36px ' + cat.glow;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                {/* Coming soon badge */}
                 {!cat.live && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '16px',
-                    right: '16px',
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: '20px',
-                    padding: '3px 10px',
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'rgba(255,255,255,0.4)',
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
-                  }}>
+                  <div style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '2px 9px', fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     Coming Soon
                   </div>
                 )}
 
-                <div style={{ fontSize: '36px', marginBottom: '16px' }}>{cat.emoji}</div>
+                <div style={{ fontSize: '32px', marginBottom: '14px' }}>{cat.emoji}</div>
 
-                <h2 style={{
-                  fontFamily: 'Merriweather, serif',
-                  fontWeight: 700,
-                  fontSize: '17px',
-                  color: cat.live ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                  margin: '0 0 10px 0',
-                  lineHeight: 1.3,
-                }}>
+                <h2 style={{ fontFamily: 'Merriweather, serif', fontWeight: 700, fontSize: '16px', color: cat.live ? '#ffffff' : 'rgba(255,255,255,0.5)', margin: '0 0 8px 0', lineHeight: 1.3 }}>
                   {cat.title}
                 </h2>
 
-                <p style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '13px',
-                  color: 'rgba(255,255,255,0.4)',
-                  margin: '0 0 20px 0',
-                  lineHeight: 1.6,
-                }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.38)', margin: '0 0 18px 0', lineHeight: 1.6 }}>
                   {cat.description}
                 </p>
 
                 {cat.live && (
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 600,
-                    fontSize: '13px',
-                    color: cat.color,
-                  }}>
-                    Explore now
-                    <span style={{ fontSize: '16px' }}>→</span>
+                  <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', color: cat.color, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    Explore now <span>→</span>
                   </div>
                 )}
               </div>
             );
 
             return cat.live ? (
-              <Link key={cat.id} href={cat.href} style={{ textDecoration: 'none' }}>
+              <Link key={cat.id} href={cat.href} style={{ textDecoration: 'none', display: 'block' }}>
                 {card}
               </Link>
             ) : (
@@ -211,14 +143,7 @@ export default function LearnHubPage() {
           })}
         </div>
 
-        {/* Footer note */}
-        <p style={{
-          fontFamily: 'Inter, sans-serif',
-          fontSize: '13px',
-          color: 'rgba(255,255,255,0.2)',
-          textAlign: 'center',
-          marginTop: '48px',
-        }}>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.18)', textAlign: 'center', marginTop: '44px' }}>
           More content types coming as the ecosystem grows
         </p>
       </div>
@@ -228,6 +153,5 @@ export default function LearnHubPage() {
 
 // --- CHANGE LOG ---
 // [May 17, 2026] CREATED: Hub page replacing direct /models link from landing
-// REASON: Need a future-proof entry point for all content types —
-//   not just 3D models. New types (lectures, quizzes) slot in as cards.
+// REASON: Future-proof entry point — new content types slot in as CATEGORIES entries
 // --- END CHANGE LOG ---
