@@ -1,14 +1,14 @@
 // ============================================================
 // FILE: components/AuthProvider.jsx
-// PURPOSE: Initialises Supabase auth listener once for the entire app
+// PURPOSE: Starts the Supabase auth listener once at app root level
 // LAST CHANGED: May 17, 2026
-// WHY IT EXISTS: onAuthStateChange must be started once at root level.
-//   Putting it in individual components causes multiple listeners and conflicts.
+// WHY IT EXISTS: onAuthStateChange must run once globally.
+//   Individual components reading auth state use useAuthStore — never start their own listener.
 // DEPENDENCIES: store/authStore.js
 // ⚠️ DO NOT CHANGE:
 //   - Must be 'use client' — Supabase auth is browser-only
-//   - Must wrap all page content in layout.js
-//   - Returns null — renders nothing, just runs the side effect
+//   - Returns children directly — renders nothing of its own
+//   - Must wrap all content in layout.js
 // ============================================================
 
 'use client';
@@ -28,6 +28,6 @@ export default function AuthProvider({ children }) {
 }
 
 // --- CHANGE LOG ---
-// [May 17, 2026] CREATED: Wraps app in layout.js
-// REASON: Central auth initialisation — one listener, no conflicts
+// [May 17, 2026] CREATED: Root auth initialisation
+// REASON: One listener, no conflicts across components
 // --- END CHANGE LOG ---
