@@ -6,7 +6,7 @@
 //   /learn is a future-proof entry point — new content types (lectures, quizzes)
 //   slot in here as cards without any route restructuring.
 // DEPENDENCIES: lib/scrollUtils.js, next/link
-// ⚠️ DO NOT CHANGE:
+// DO NOT CHANGE:
 //   - Must unlock scroll on mount — landing page locks it, bleeds in on navigation
 //   - Coming soon cards must NOT be wrapped in Link — they are not clickable
 //   - To add a new content type: add an object to CATEGORIES, set live: true when ready
@@ -67,7 +67,7 @@ export default function LearnHubPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#050510', paddingTop: '80px', paddingBottom: '64px' }}>
+    <div style={{ minHeight: '100vh', background: '#050510', paddingTop: '84px', paddingBottom: '64px' }}>
 
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(ellipse at 20% 20%, rgba(79,195,247,0.05) 0%, transparent 55%), radial-gradient(ellipse at 80% 75%, rgba(167,139,250,0.04) 0%, transparent 55%)' }} />
 
@@ -154,4 +154,6 @@ export default function LearnHubPage() {
 // --- CHANGE LOG ---
 // [May 17, 2026] CREATED: Hub page replacing direct /models link from landing
 // REASON: Future-proof entry point — new content types slot in as CATEGORIES entries
+// [May 17, 2026] CHANGED: paddingTop 80px -> 84px
+// REASON: Navbar rebuilt as two-row layout — total height is now 84px
 // --- END CHANGE LOG ---
