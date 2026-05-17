@@ -43,9 +43,8 @@ const GOLD = '#fbbf24';
 
 export default function SkeletonQuiz({ setActiveBone, onClose }) {
   const user = useAuthStore(state => state.user);
-  // isMember: always false until authStore gains a profile field with is_member.
-  // When that is added, replace this line with: const isMember = useAuthStore(state => state.profile?.is_member) === true;
-  const isMember = false;
+const isMember = useAuthStore(state => state.profile?.is_member) === true;
+
 
   // Game phases: 'mode' | 'playing' | 'results'
   const [phase, setPhase] = useState('mode');
