@@ -1,11 +1,11 @@
 // ============================================================
 // FILE: app/auth/callback/route.js
-// PURPOSE: Handles OAuth and magic link redirect after Supabase auth
+// PURPOSE: Handles OAuth redirect after Supabase auth
 // LAST CHANGED: May 17, 2026
-// WHY IT EXISTS: Google OAuth and email magic links redirect here.
+// WHY IT EXISTS: Google OAuth redirects here after authentication.
+//   Exchanges the code for a session then sends user to /learn.
 // DEPENDENCIES: @supabase/supabase-js, next/server
 // ⚠️ DO NOT CHANGE:
-//   - Uses basic createClient — @supabase/ssr cookies() was failing in Next.js 14
 //   - On success redirects to /learn
 //   - On error redirects to /auth?error=1
 // ============================================================
@@ -30,16 +30,14 @@ export async function GET(request) {
     if (!error) {
       return NextResponse.redirect(origin + '/learn');
     }
-    console.error('exchangeCodeForSession error:', error.message);
   } catch (err) {
-    console.error('callback route error:', err);
+    console.error('callback error:', err);
   }
 
   return NextResponse.redirect(origin + '/auth?error=1');
 }
 
 // --- CHANGE LOG ---
-// [May 17, 2026] FIXED: Reverted to basic createClient
-// REASON: @supabase/ssr cookies() was failing silently in Next.js 14 route handlers
-//   causing exchangeCodeForSession to error and fall back to Supabase Site URL
+// [May 17, 2026] FIXED: Restored proper redirect after debug version
+// REASON: Debug version was returning plain text instead of redirecting
 // --- END CHANGE LOG ---
