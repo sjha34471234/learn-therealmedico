@@ -13,11 +13,11 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { unlockScroll } from '../../lib/scrollUtils';
-import { DNA_INFO, DNA_CATALOG } from '../../lib/dnaData';
+import { unlockScroll } from '../../../lib/scrollUtils';
+import { DNA_INFO, DNA_CATALOG } from '../../../lib/dnaData';
+const DnaScene = dynamic(() => import('../../../components/DnaScene'), { ssr: false });
+const DnaQuiz = dynamic(() => import('../../../components/DnaQuiz'), { ssr: false });
 
-const DnaScene = dynamic(() => import('../../components/DnaScene'), { ssr: false });
-const DnaQuiz = dynamic(() => import('../../components/DnaQuiz'), { ssr: false });
 
 const TEAL = '#4fc3f7';
 
