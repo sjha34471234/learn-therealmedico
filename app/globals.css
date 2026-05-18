@@ -90,3 +90,18 @@ html, body {
 html {
   font-family: 'Inter', sans-serif;
 }
+/* ─── PAGE SCROLL CONTAINER ─────────────────────────────────── */
+/* The ONLY scrollable element. Body never scrolls.
+   Starts below the 84px two-row navbar.
+   Landing page uses lockScroll() which overrides this fine. */
+
+#page-scroll-container {
+  position: fixed;
+  top: 84px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
