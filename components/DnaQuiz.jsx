@@ -3,8 +3,9 @@
 // PURPOSE: Quiz panel for the DNA model page — mode picker, game loop, gated results
 // LAST CHANGED: May 18, 2026
 // WHY IT EXISTS: Follows 3D Model Template. Identical pattern to SkeletonQuiz.jsx.
-// DEPENDENCIES: lib/dnaData.js (QUIZ_DNA), store/authStore.js (is_member)
+// DEPENDENCIES: lib/dnaData.js (QUIZ_DNA), store/authStore.js (is_member), components/UpgradeGate.jsx
 // DO NOT CHANGE: isMember check — detailed analysis must NEVER enter DOM for non-members
+// DO NOT CHANGE: finalResults pattern in advance() — results state lags one render behind
 // ============================================================
 
 'use client';
@@ -12,6 +13,7 @@
 import { useState, useEffect, useRef } from 'react';
 import useAuthStore from '../store/authStore';
 import { QUIZ_DNA } from '../lib/dnaData';
+import UpgradeGate from './UpgradeGate';
 
 const TEAL = '#4fc3f7';
 const GREEN = '#34d399';
@@ -43,7 +45,8 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [results, setResults] = useState([]);
-  const [startTime, setStartTime] = useState(null);
+  // FIX: store final results in a ref so results phase always has the complete list
+  const finalResultsRef = useRef([]);
   const [questionStart, setQuestionStart] = useState(null);
   const inputRef = useRef(null);
 
@@ -55,9 +58,9 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
     setQueue(q);
     setCurrentIndex(0);
     setResults([]);
+    finalResultsRef.current = [];
     setFeedback(null);
     setInput('');
-    setStartTime(Date.now());
     setQuestionStart(Date.now());
     setPhase('playing');
     if (q[0]) {
@@ -69,10 +72,16 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
     }
   }
 
-  function advance(result) {
+  function advance(resultEntry) {
+    // FIX: build full results list here using ref — don't rely on state which lags
+    const newResults = [...finalResultsRef.current, resultEntry];
+    finalResultsRef.current = newResults;
+    setResults(newResults);
+
     const next = currentIndex + 1;
     if (next >= queue.length) {
       setActiveStructure(null);
+      onStructureChange(null);
       setPhase('results');
       return;
     }
@@ -101,9 +110,8 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
       userAnswer: answer.trim(),
       timeTaken,
     };
-    setResults(prev => [...prev, resultEntry]);
     setFeedback(correct ? 'correct' : { wrong: true, correctName: current.name });
-    setTimeout(() => advance(resultEntry), correct ? 700 : 700);
+    setTimeout(() => advance(resultEntry), 700);
   }
 
   function skip() {
@@ -117,7 +125,6 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
       userAnswer: '',
       timeTaken,
     };
-    setResults(prev => [...prev, resultEntry]);
     setFeedback({ skipped: true, correctName: current.name });
     setTimeout(() => advance(resultEntry), 400);
   }
@@ -128,14 +135,17 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
     }
   }, [phase, currentIndex, mode]);
 
-  const correctCount = results.filter(r => r.result === 'correct').length;
-  const wrongCount = results.filter(r => r.result === 'wrong').length;
-  const skippedCount = results.filter(r => r.result === 'skipped').length;
+  // Use finalResultsRef for results phase so we always have the complete list
+  const displayResults = phase === 'results' ? finalResultsRef.current : results;
+
+  const correctCount = displayResults.filter(r => r.result === 'correct').length;
+  const wrongCount = displayResults.filter(r => r.result === 'wrong').length;
+  const skippedCount = displayResults.filter(r => r.result === 'skipped').length;
   const pct = queue.length > 0 ? Math.round((correctCount / queue.length) * 100) : 0;
   const scoreColor = pct >= 80 ? GREEN : pct >= 50 ? GOLD : RED;
 
   const regionStats = {};
-  results.forEach(r => {
+  displayResults.forEach(r => {
     if (!regionStats[r.region]) regionStats[r.region] = { correct: 0, total: 0 };
     regionStats[r.region].total++;
     if (r.result === 'correct') regionStats[r.region].correct++;
@@ -190,7 +200,7 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
       <div style={{ background: '#1e293b', borderRadius: '999px', height: '6px', width: '100%' }}>
         <div style={{
           height: '100%', borderRadius: '999px', background: TEAL,
-          width: `${((currentIndex) / queue.length) * 100}%`,
+          width: `${(currentIndex / queue.length) * 100}%`,
           transition: 'width 0.3s ease',
         }} />
       </div>
@@ -316,7 +326,9 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
       {/* Detailed analysis — MEMBERS ONLY — never in DOM for non-members */}
       {isMember && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>Detailed Analysis</div>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: GOLD, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Real Medico+ Analysis
+          </div>
 
           {weakRegions.length > 0 && (
             <div style={{
@@ -334,8 +346,8 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
             </div>
           )}
 
-          {results.map(r => (
-            <div key={r.key} style={{
+          {displayResults.map((r, i) => (
+            <div key={i} style={{
               background: '#0f172a', borderRadius: '8px', padding: '10px 14px',
               border: `1px solid ${r.result === 'correct' ? GREEN : r.result === 'skipped' ? TEAL : RED}33`,
             }}>
@@ -357,27 +369,8 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
         </div>
       )}
 
-      {/* Non-member gate */}
-      {!isMember && (
-        <div style={{
-          background: '#0f172a', borderRadius: '12px', padding: '20px',
-          border: '1px solid #334155', textAlign: 'center',
-        }}>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>
-            Unlock Detailed Analysis
-          </div>
-          <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '16px', lineHeight: 1.6 }}>
-            Real Medico+ members get per-structure breakdowns, weak area detection, and time tracking.
-          </div>
-          <a href="https://therealmedico.store/account" style={{
-            display: 'inline-block', padding: '10px 24px',
-            background: TEAL, color: '#020817', fontWeight: 700,
-            fontSize: '13px', borderRadius: '8px', textDecoration: 'none',
-          }}>
-            Upgrade to Real Medico+
-          </a>
-        </div>
-      )}
+      {/* Non-member gate — UpgradeGate component — never in DOM for members */}
+      {!isMember && <UpgradeGate />}
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
@@ -403,6 +396,10 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
 }
 
 // — CHANGE LOG —
-// [May 18, 2026] CREATED: Full quiz panel for DNA model — mode picker, game loop, results, membership gate
-// REASON: Follows 3D Model Template from brain dump. Pattern cloned from SkeletonQuiz.jsx.
+// [May 18, 2026] CREATED: Full quiz panel for DNA model
+// REASON: Follows 3D Model Template from brain dump.
+// [May 18, 2026] FIXED: Added UpgradeGate import — was missing from previous version
+// [May 18, 2026] FIXED: finalResultsRef pattern — results state lags one render behind on last entry
+// REASON: In type mode, last answer was missing from detailed analysis because setResults
+//         is async — phase switched to results before state updated. Ref is synchronous.
 // — END CHANGE LOG —
