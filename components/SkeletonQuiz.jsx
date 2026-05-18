@@ -3,7 +3,7 @@
 // PURPOSE: Skeleton quiz panel — mode picker, game loop, score, gated analysis
 // LAST CHANGED: May 18, 2026
 // WHY IT EXISTS: Quiz Me feature on skeleton page — active recall study tool
-// DEPENDENCIES: lib/quizData.js, store/authStore.js
+// DEPENDENCIES: lib/quizData.js, store/authStore.js, components/UpgradeGate.jsx
 // DO NOT CHANGE:
 //   - Detailed analysis must NEVER render in DOM for non-members — not even blurred.
 //   - setActiveBone highlights bones in the 3D canvas during the game.
@@ -18,6 +18,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { QUIZ_BONES } from '../lib/quizData';
 import useAuthStore from '../store/authStore';
+import UpgradeGate from './UpgradeGate';
 
 function shuffle(arr) {
   const a = [...arr];
@@ -151,7 +152,6 @@ export default function SkeletonQuiz({ setActiveBone, onClose, onBoneChange }) {
 
   const feedbackColor = feedback === 'correct' ? GREEN : feedback === 'wrong' ? RED : TEAL;
 
-  // Shared panel wrapper — scrollable, full height
   const panelWrap = {
     height: '100%',
     overflowY: 'auto',
@@ -206,7 +206,6 @@ export default function SkeletonQuiz({ setActiveBone, onClose, onBoneChange }) {
 
     return (
       <div style={panelWrap}>
-        {/* Header row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
             {currentIndex + 1} / {queue.length}
@@ -219,29 +218,24 @@ export default function SkeletonQuiz({ setActiveBone, onClose, onBoneChange }) {
           </button>
         </div>
 
-        {/* Progress bar */}
         <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', marginBottom: '20px', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${progress}%`, background: TEAL, borderRadius: '2px', transition: 'width 0.3s' }} />
         </div>
 
-        {/* Region */}
         <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: TEAL, marginBottom: '6px', fontFamily: 'Inter, sans-serif' }}>
           {currentBone?.region}
         </div>
 
-        {/* Prompt */}
         <h3 style={{ fontFamily: 'Merriweather, serif', fontWeight: 700, fontSize: 'clamp(15px, 3vw, 20px)', color: '#fff', margin: '0 0 20px 0', lineHeight: 1.3 }}>
           What bone is highlighted in teal?
         </h3>
 
-        {/* Feedback */}
         {feedback && (
           <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 700, color: feedbackColor, marginBottom: '14px', textAlign: 'center' }}>
             {feedback === 'correct' ? 'Correct!' : feedback === 'wrong' ? `It was ${currentBone?.name}` : 'Skipped'}
           </div>
         )}
 
-        {/* TYPE MODE */}
         {mode === 'type' && !feedback && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <input
@@ -268,7 +262,6 @@ export default function SkeletonQuiz({ setActiveBone, onClose, onBoneChange }) {
           </div>
         )}
 
-        {/* MULTIPLE CHOICE MODE */}
         {mode === 'choice' && !feedback && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {options.map(opt => (
@@ -370,22 +363,9 @@ export default function SkeletonQuiz({ setActiveBone, onClose, onBoneChange }) {
             </div>
           </div>
         ) : (
-          <div style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '12px', padding: '20px', textAlign: 'center', marginBottom: '20px' }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>★</div>
-            <div style={{ fontFamily: 'Merriweather, serif', fontWeight: 700, fontSize: '14px', color: '#fff', marginBottom: '6px' }}>
-              Detailed Analysis
-            </div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.45)', marginBottom: '14px', lineHeight: 1.6 }}>
-              Per-bone breakdown, time per bone, weak regions — with Real Medico+.
-            </p>
-            <a
-              href="https://therealmedico.store/account"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-block', background: GOLD, color: '#111', fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: '12px', padding: '9px 18px', borderRadius: '8px', textDecoration: 'none' }}
-            >
-              Unlock with Real Medico+
-            </a>
+          /* Non-member gate — UpgradeGate component — never blurred, never in DOM when member */
+          <div style={{ marginBottom: '20px' }}>
+            <UpgradeGate />
           </div>
         )}
 
@@ -458,6 +438,7 @@ const choiceBtnStyle = {
 // [May 17, 2026] CREATED: Full skeleton quiz with overlay
 // REASON: Quiz Me feature
 // [May 18, 2026] REBUILT: Removed overlay — now a pure panel component
-// REASON: Split-screen layout — page.js handles positioning. Added onBoneChange callback
-//         for camera focus. Labels hidden in SkeletonScene when quizMode is true.
+// REASON: Split-screen layout — page.js handles positioning.
+// [May 18, 2026] UPDATED: Replaced inline upgrade card with UpgradeGate component
+// REASON: Modular reusable upsell — same component used in DnaQuiz and future quizzes.
 // --- END CHANGE LOG ---
