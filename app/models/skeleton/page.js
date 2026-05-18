@@ -1,13 +1,15 @@
 // ============================================================
 // FILE: app/models/skeleton/page.js
 // PURPOSE: Individual model page for the male skeleton
-// LAST CHANGED: May 17, 2026
+// LAST CHANGED: May 18, 2026
 // WHY IT EXISTS: Routed from /models catalogue - slug: skeleton
-// DO NOT CHANGE: SkeletonScene must stay inside dynamic() with ssr:false
-//                Do NOT put a fixed height on the 3D scene wrapper div.
-//                activeBone state lives HERE and is passed to SkeletonScene as prop.
-//                This allows bone cards below to trigger highlights in the 3D viewer.
-//                SkeletonQuiz also receives setActiveBone to highlight bones during quiz.
+// DO NOT CHANGE:
+//   - SkeletonScene must stay inside dynamic() with ssr:false
+//   - Do NOT put a fixed height on the 3D scene wrapper div
+//   - activeBone state lives HERE — passed as props to SkeletonScene
+//   - quizMode switches page to split layout — canvas left, quiz panel right
+//   - On mobile (under 768px): canvas top, quiz panel bottom
+//   - focusBone is set by SkeletonQuiz via onBoneChange callback
 // ============================================================
 
 'use client';
@@ -82,7 +84,9 @@ const BONE_CATALOG = [
 
 export default function SkeletonPage() {
   const [activeBone, setActiveBone] = useState(null);
-  const [quizOpen, setQuizOpen] = useState(false);
+  const [quizMode, setQuizMode] = useState(false);
+  const [focusBone, setFocusBone] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const sceneRef = useRef(null);
 
   useEffect(() => {
@@ -94,34 +98,110 @@ export default function SkeletonPage() {
     };
   }, []);
 
+  useEffect(() => {
+    function checkMobile() { setIsMobile(window.innerWidth < 768); }
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   function showBone(key) {
     setActiveBone(key);
     sceneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
+  function openQuiz() {
+    setQuizMode(true);
+    setActiveBone(null);
+    // Scroll to top so canvas is visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function closeQuiz() {
+    setQuizMode(false);
+    setActiveBone(null);
+    setFocusBone(null);
+  }
+
+  // ─── QUIZ MODE LAYOUT ───────────────────────────────────────
+  if (quizMode) {
+    return (
+      <div style={{
+        background: '#050510',
+        height: '100vh',
+        color: '#fff',
+        fontFamily: 'Inter, sans-serif',
+        paddingTop: '84px',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        overflow: 'hidden',
+      }}>
+        {/* Canvas side */}
+        <div style={{
+          flex: isMobile ? 'none' : '1',
+          height: isMobile ? '42vh' : '100%',
+          position: 'relative',
+          borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.07)',
+          borderBottom: isMobile ? '1px solid rgba(255,255,255,0.07)' : 'none',
+        }}>
+          {/* Quiz mode hint */}
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            left: '12px',
+            zIndex: 10,
+            background: 'rgba(5,5,16,0.75)',
+            border: '1px solid rgba(79,195,247,0.3)',
+            borderRadius: '20px',
+            padding: '4px 12px',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '11px',
+            color: '#4fc3f7',
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            pointerEvents: 'none',
+          }}>
+            QUIZ MODE
+          </div>
+          <SkeletonScene
+            activeBone={activeBone}
+            setActiveBone={setActiveBone}
+            quizMode={true}
+            focusBone={focusBone}
+          />
+        </div>
+
+        {/* Quiz panel side */}
+        <div style={{
+          flex: isMobile ? 'none' : '0 0 360px',
+          height: isMobile ? '58vh' : '100%',
+          background: 'rgba(255,255,255,0.02)',
+          overflowY: 'auto',
+        }}>
+          <SkeletonQuiz
+            setActiveBone={setActiveBone}
+            onClose={closeQuiz}
+            onBoneChange={(boneKey) => {
+              setActiveBone(boneKey);
+              setFocusBone(boneKey);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ─── NORMAL MODE LAYOUT ─────────────────────────────────────
   return (
     <div style={{
-  background: '#050510',
-  minHeight: '100vh',
-  color: '#fff',
-  fontFamily: 'Inter, sans-serif',
-  display: 'flex',
-  flexDirection: 'column',
-  paddingTop: '84px',
-}}>
-
-
-      {/* Quiz overlay */}
-      {quizOpen && (
-        <SkeletonQuiz
-          setActiveBone={setActiveBone}
-          onClose={() => {
-            setQuizOpen(false);
-            setActiveBone(null);
-          }}
-        />
-      )}
-
+      background: '#050510',
+      minHeight: '100vh',
+      color: '#fff',
+      fontFamily: 'Inter, sans-serif',
+      display: 'flex',
+      flexDirection: 'column',
+      paddingTop: '84px',
+    }}>
       {/* Top bar */}
       <div style={{
         display: 'flex',
@@ -130,14 +210,7 @@ export default function SkeletonPage() {
         padding: '18px 24px',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}>
-        <Link href="/models" style={{
-          color: '#aaa',
-          textDecoration: 'none',
-          fontSize: '14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
+        <Link href="/models" style={{ color: '#aaa', textDecoration: 'none', fontSize: '14px' }}>
           Back to Models
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -145,7 +218,7 @@ export default function SkeletonPage() {
             Musculoskeletal
           </div>
           <button
-            onClick={() => setQuizOpen(true)}
+            onClick={openQuiz}
             style={{
               background: 'rgba(79,195,247,0.12)',
               border: '1px solid rgba(79,195,247,0.35)',
@@ -166,13 +239,7 @@ export default function SkeletonPage() {
 
       {/* Title */}
       <div style={{ padding: '24px 24px 0' }}>
-        <h1 style={{
-          fontFamily: 'Merriweather, serif',
-          fontWeight: 900,
-          fontSize: 'clamp(24px, 5vw, 42px)',
-          margin: 0,
-          lineHeight: 1.15,
-        }}>
+        <h1 style={{ fontFamily: 'Merriweather, serif', fontWeight: 900, fontSize: 'clamp(24px, 5vw, 42px)', margin: 0, lineHeight: 1.15 }}>
           Male Skeleton
         </h1>
         <p style={{ color: '#888', fontSize: '14px', marginTop: '8px', marginBottom: 0 }}>
@@ -182,45 +249,32 @@ export default function SkeletonPage() {
 
       {/* 3D Scene */}
       <div ref={sceneRef} style={{ padding: '16px 16px 0' }}>
-        <SkeletonScene activeBone={activeBone} setActiveBone={setActiveBone} />
+        <SkeletonScene
+          activeBone={activeBone}
+          setActiveBone={setActiveBone}
+          quizMode={false}
+          focusBone={null}
+        />
       </div>
 
       {/* Quick facts */}
-      <div style={{
-        padding: '20px 24px',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-        gap: '12px',
-      }}>
+      <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
         {[
           { label: 'Total Bones', value: '206' },
           { label: 'Heaviest Bone', value: 'Femur' },
           { label: 'Smallest Bone', value: 'Stapes (ear)' },
           { label: 'Function', value: 'Support & Protection' },
         ].map((stat) => (
-          <div key={stat.label} style={{
-            background: 'rgba(255,255,255,0.04)',
-            borderRadius: '10px',
-            padding: '14px',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            <div style={{ color: '#00ffcc', fontSize: '11px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              {stat.label}
-            </div>
+          <div key={stat.label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ color: '#00ffcc', fontSize: '11px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{stat.label}</div>
             <div style={{ fontWeight: 600, fontSize: '15px' }}>{stat.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Bone catalog by region */}
+      {/* Bone catalog */}
       <div style={{ padding: '0 24px 60px' }}>
-        <h2 style={{
-          fontFamily: 'Merriweather, serif',
-          fontWeight: 700,
-          fontSize: 'clamp(18px, 3vw, 26px)',
-          marginBottom: '6px',
-          marginTop: '8px',
-        }}>
+        <h2 style={{ fontFamily: 'Merriweather, serif', fontWeight: 700, fontSize: 'clamp(18px, 3vw, 26px)', marginBottom: '6px', marginTop: '8px' }}>
           Bone Reference
         </h2>
         <p style={{ color: '#555', fontSize: '13px', marginBottom: '32px', marginTop: 0 }}>
@@ -229,77 +283,31 @@ export default function SkeletonPage() {
 
         {BONE_CATALOG.map((section) => (
           <div key={section.region} style={{ marginBottom: '40px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '16px',
-            }}>
-              <div style={{
-                color: '#00ffcc',
-                fontSize: '11px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-              }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ color: '#00ffcc', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
                 {section.region}
               </div>
               <div style={{ flex: 1, height: '1px', background: 'rgba(0,255,204,0.15)' }} />
             </div>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '12px',
-            }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
               {section.bones.map((bone) => {
                 const isActive = activeBone === bone.key;
                 return (
-                  <div key={bone.key} style={{
-                    background: isActive ? 'rgba(0,255,204,0.06)' : 'rgba(255,255,255,0.03)',
-                    border: isActive ? '1px solid rgba(0,255,204,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    transition: 'border 0.2s, background 0.2s',
-                  }}>
-                    <div style={{
-                      fontWeight: 700,
-                      fontSize: '15px',
-                      color: isActive ? '#00ffcc' : '#fff',
-                      marginBottom: '10px',
-                      transition: 'color 0.2s',
-                    }}>
+                  <div key={bone.key} style={{ background: isActive ? 'rgba(0,255,204,0.06)' : 'rgba(255,255,255,0.03)', border: isActive ? '1px solid rgba(0,255,204,0.5)' : '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', transition: 'border 0.2s, background 0.2s' }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: isActive ? '#00ffcc' : '#fff', marginBottom: '10px', transition: 'color 0.2s' }}>
                       {bone.name}
                     </div>
-
                     <ul style={{ margin: 0, padding: '0 0 0 16px', listStyle: 'disc' }}>
                       {bone.facts.map((fact, i) => (
-                        <li key={i} style={{
-                          color: '#94a3b8',
-                          fontSize: '13px',
-                          lineHeight: 1.6,
-                          marginBottom: i < bone.facts.length - 1 ? '6px' : 0,
-                        }}>
+                        <li key={i} style={{ color: '#94a3b8', fontSize: '13px', lineHeight: 1.6, marginBottom: i < bone.facts.length - 1 ? '6px' : 0 }}>
                           {fact}
                         </li>
                       ))}
                     </ul>
-
                     <button
                       onClick={() => showBone(isActive ? null : bone.key)}
-                      style={{
-                        marginTop: '14px',
-                        padding: '7px 14px',
-                        borderRadius: '8px',
-                        border: isActive ? '1px solid #00ffcc' : '1px solid rgba(0,255,204,0.35)',
-                        background: isActive ? 'rgba(0,255,204,0.15)' : 'transparent',
-                        color: isActive ? '#00ffcc' : '#5eead4',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        letterSpacing: '0.04em',
-                        transition: 'all 0.2s',
-                      }}
+                      style={{ marginTop: '14px', padding: '7px 14px', borderRadius: '8px', border: isActive ? '1px solid #00ffcc' : '1px solid rgba(0,255,204,0.35)', background: isActive ? 'rgba(0,255,204,0.15)' : 'transparent', color: isActive ? '#00ffcc' : '#5eead4', fontSize: '12px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.04em', transition: 'all 0.2s' }}
                     >
                       {isActive ? 'Shown in Model' : 'View in Model'}
                     </button>
@@ -310,14 +318,14 @@ export default function SkeletonPage() {
           </div>
         ))}
       </div>
-
     </div>
   );
 }
 
 // --- CHANGE LOG ---
-// [May 16, 2026] CREATED: Male skeleton page with 3D viewer + bone reference cards
-// REASON: Routed from /models catalogue
+// [May 16, 2026] CREATED: Male skeleton page
 // [May 17, 2026] CHANGED: Added Quiz Me button + SkeletonQuiz overlay
-// REASON: Active recall quiz feature — Quiz Me button in top bar opens SkeletonQuiz
+// [May 18, 2026] REBUILT: Quiz now uses split-screen layout — no overlay
+// REASON: Canvas visible during quiz. Canvas left/top, quiz panel right/bottom.
+//         quizMode and focusBone props passed to SkeletonScene for auto-rotate + camera focus.
 // --- END CHANGE LOG ---
