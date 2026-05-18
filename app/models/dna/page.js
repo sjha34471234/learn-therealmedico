@@ -49,8 +49,9 @@ export default function DnaPage() {
 
   // Canvas height following template rules
   const canvasHeight = quizMode
-    ? (isMobile ? '42vh' : 'calc(100vh - 84px)')
-    : (isMobile ? '55vh' : '65vh');
+  ? (isMobile ? '42vh' : 'calc(100vh - 84px)')
+  : (isMobile ? '70vw' : '600px');
+
 
   const activeInfo = activeStructure ? DNA_INFO[activeStructure] : null;
 
