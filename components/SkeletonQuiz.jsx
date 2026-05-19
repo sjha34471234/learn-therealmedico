@@ -1,7 +1,7 @@
 // ============================================================
 // FILE: components/SkeletonQuiz.jsx
 // PURPOSE: Skeleton quiz panel — mode picker, game loop, score, gated analysis
-// LAST CHANGED: May 18, 2026
+// LAST CHANGED: May 19, 2026
 // WHY IT EXISTS: Quiz Me feature on skeleton page — active recall study tool
 // DEPENDENCIES: lib/quizData.js, store/authStore.js, components/UpgradeGate.jsx
 // DO NOT CHANGE:
@@ -11,6 +11,7 @@
 //   - shuffle uses Fisher-Yates — do not replace with sort + random.
 //   - No overlay/backdrop here — positioning handled entirely by page.js split layout.
 //   - onBoneChange callback fires when quiz advances to next bone (for camera focus).
+//   - Multiple choice uses key comparison (opt.key === currentBone.key) — NOT string match.
 // ============================================================
 
 'use client';
@@ -109,7 +110,7 @@ export default function SkeletonQuiz({ setActiveBone, onClose, onBoneChange }) {
   function checkAnswer(answer) {
     const timeMs = Date.now() - boneStartTime.current;
     const clean = answer.toLowerCase().trim();
-    const isCorrect = currentBone.accepted.includes(clean);
+    const isCorrect = currentBone.accepted.some(a => a.toLowerCase() === clean);
     setFeedback(isCorrect ? 'correct' : 'wrong');
     setTimeout(() => {
       advance({ bone: currentBone, answer, correct: isCorrect, skipped: false, timeMs });
@@ -267,7 +268,14 @@ export default function SkeletonQuiz({ setActiveBone, onClose, onBoneChange }) {
             {options.map(opt => (
               <button
                 key={opt.key}
-                onClick={() => checkAnswer(opt.name.toLowerCase())}
+                onClick={() => checkAnswer(
+                  // FIX: use key comparison — if this option IS the correct bone,
+                  // pass its first accepted answer directly. This avoids any string
+                  // mismatch between opt.name and the accepted[] array.
+                  opt.key === currentBone.key
+                    ? currentBone.accepted[0]
+                    : opt.name.toLowerCase()
+                )}
                 style={choiceBtnStyle}
               >
                 {opt.name}
@@ -441,4 +449,9 @@ const choiceBtnStyle = {
 // REASON: Split-screen layout — page.js handles positioning.
 // [May 18, 2026] UPDATED: Replaced inline upgrade card with UpgradeGate component
 // REASON: Modular reusable upsell — same component used in DnaQuiz and future quizzes.
+// [May 19, 2026] FIXED: Multiple choice answer matching now uses key comparison
+// REASON: opt.name.toLowerCase() did not always match an entry in accepted[].
+//         Fix: if opt.key === currentBone.key, pass currentBone.accepted[0] directly.
+//         This guarantees a match for correct answers regardless of name formatting.
+//         Wrong options pass opt.name.toLowerCase() which correctly fails the accepted check.
 // --- END CHANGE LOG ---
