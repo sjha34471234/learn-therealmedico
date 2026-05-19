@@ -1,15 +1,13 @@
 // ============================================================
 // FILE: app/learn/page.js
 // PURPOSE: Hub page — user chooses what type of content to explore
-// LAST CHANGED: May 17, 2026
-// WHY IT EXISTS: Landing page previously went straight to /models.
-//   /learn is a future-proof entry point — new content types (lectures, quizzes)
-//   slot in here as cards without any route restructuring.
+// LAST CHANGED: May 19, 2026
+// WHY IT EXISTS: Future-proof entry point — new content types slot in as CATEGORIES entries
 // DEPENDENCIES: lib/scrollUtils.js, next/link
 // DO NOT CHANGE:
-//   - Must unlock scroll on mount — landing page locks it, bleeds in on navigation
-//   - Coming soon cards must NOT be wrapped in Link — they are not clickable
-//   - To add a new content type: add an object to CATEGORIES, set live: true when ready
+//   - Must unlock scroll on mount — landing page locks it
+//   - Coming soon cards must NOT be wrapped in Link
+//   - To add a new content type: add object to CATEGORIES, set live: true when ready
 // ============================================================
 
 'use client';
@@ -30,6 +28,16 @@ const CATEGORIES = [
     glow: 'rgba(79,195,247,0.14)',
   },
   {
+    id: 'quizzes',
+    emoji: '📝',
+    title: 'Quizzes & MCQs',
+    description: 'Test your knowledge with topic-wise MCQs. Choose a model, pick your mode, and get instant feedback with detailed analysis.',
+    href: '/mcq',
+    live: true,
+    color: '#34d399',
+    glow: 'rgba(52,211,153,0.12)',
+  },
+  {
     id: 'lectures',
     emoji: '🎓',
     title: 'Video Lectures',
@@ -38,16 +46,6 @@ const CATEGORIES = [
     live: false,
     color: '#a78bfa',
     glow: 'rgba(167,139,250,0.12)',
-  },
-  {
-    id: 'quizzes',
-    emoji: '📝',
-    title: 'Quizzes & MCQs',
-    description: 'Test your knowledge with topic-wise MCQs modelled on nursing entrance and board exam patterns.',
-    href: null,
-    live: false,
-    color: '#34d399',
-    glow: 'rgba(52,211,153,0.12)',
   },
   {
     id: 'cases',
@@ -156,4 +154,6 @@ export default function LearnHubPage() {
 // REASON: Future-proof entry point — new content types slot in as CATEGORIES entries
 // [May 17, 2026] CHANGED: paddingTop 80px -> 84px
 // REASON: Navbar rebuilt as two-row layout — total height is now 84px
+// [May 19, 2026] CHANGED: Quizzes & MCQs card set to live: true, href: '/mcq'
+// REASON: MCQ quiz hub now exists at /mcq
 // --- END CHANGE LOG ---
