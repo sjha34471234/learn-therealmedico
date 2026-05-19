@@ -1,11 +1,12 @@
 // ============================================================
 // FILE: components/DnaQuiz.jsx
 // PURPOSE: Quiz panel for the DNA model page — mode picker, game loop, gated results
-// LAST CHANGED: May 18, 2026
+// LAST CHANGED: May 19, 2026
 // WHY IT EXISTS: Follows 3D Model Template. Identical pattern to SkeletonQuiz.jsx.
 // DEPENDENCIES: lib/dnaData.js (QUIZ_DNA), store/authStore.js (is_member), components/UpgradeGate.jsx
 // DO NOT CHANGE: isMember check — detailed analysis must NEVER enter DOM for non-members
 // DO NOT CHANGE: finalResults pattern in advance() — results state lags one render behind
+// DO NOT CHANGE: Multiple choice uses key comparison (c.key === current.key) — NOT string match
 // ============================================================
 
 'use client';
@@ -264,12 +265,23 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
       {mode === 'choice' && !feedback && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {choices.map(c => (
-            <button key={c.key} onClick={() => checkAnswer(c.name)} style={{
-              padding: '11px 14px', borderRadius: '8px', textAlign: 'left',
-              background: '#0f172a', border: '1px solid #334155',
-              color: '#e2e8f0', fontSize: '14px', cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
-            }}>
+            <button
+              key={c.key}
+              onClick={() => checkAnswer(
+                // FIX: use key comparison — if this option IS the correct structure,
+                // pass its first accepted answer directly. Avoids any mismatch between
+                // c.name display text and entries in the accepted[] array.
+                c.key === current.key
+                  ? current.accepted[0]
+                  : c.name
+              )}
+              style={{
+                padding: '11px 14px', borderRadius: '8px', textAlign: 'left',
+                background: '#0f172a', border: '1px solid #334155',
+                color: '#e2e8f0', fontSize: '14px', cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif',
+              }}
+            >
               {c.name}
             </button>
           ))}
@@ -402,4 +414,8 @@ export default function DnaQuiz({ setActiveStructure, onClose, onStructureChange
 // [May 18, 2026] FIXED: finalResultsRef pattern — results state lags one render behind on last entry
 // REASON: In type mode, last answer was missing from detailed analysis because setResults
 //         is async — phase switched to results before state updated. Ref is synchronous.
+// [May 19, 2026] FIXED: Multiple choice answer matching now uses key comparison
+// REASON: c.name did not always match an entry in accepted[]. Fix: if c.key === current.key,
+//         pass current.accepted[0] directly. Guarantees correct answers are never marked wrong.
+//         Wrong options pass c.name which correctly fails the accepted check.
 // — END CHANGE LOG —
